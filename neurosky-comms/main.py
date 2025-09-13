@@ -5,6 +5,10 @@ import matplotlib.animation as animation
 import threading
 from collections import deque, namedtuple
 import statistics
+import sys
+import os
+
+# Removed WebSocket client import - main.py now only handles plotting
 
 # Define a comprehensive data structure for EEG readings
 EEGReading = namedtuple('EEGReading', [
@@ -173,6 +177,8 @@ def init_plot():
     # Show plot in non-blocking mode
     plt.ion()
     plt.show()
+
+# Removed WebSocket data sending function
 
 def update_reading_data(key, value):
     """Helper function to update current reading and create complete reading when all data is available"""

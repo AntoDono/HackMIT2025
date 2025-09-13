@@ -1,86 +1,144 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Python 2.7 compatible WebSocket client for sending EEG data
-Requires: pip install websocket-client==0.48.0
+Python 2.7 compatible socket client for sending EEG data
+Simple TCP socket communication
 """
 
 import json
+import socket
 import time
-import random
-import websocket
+import threading
+import Queue
 
-def send_eeg_data():
-    """Send random EEG data to the WebSocket endpoint."""
+# Global socket connection
+socket_connection = None
+server_host = "10.189.119.65"
+server_port = 8001  # Different port for plain socket
+
+# Threading globals
+send_queue = Queue.Queue()
+sender_thread = None
+sender_running = False
+
+def connect_socket():
+    """Initialize global socket connection"""
+    global socket_connection
     
-    # WebSocket URL
-    ws_url = "ws://127.0.0.1:8000/ws/brainwaves"
+    if socket_connection is not None:
+        return True
     
-    print("Connecting to: {}".format(ws_url))
+    try:
+        print("Connecting to: {}:{}".format(server_host, server_port))
+        
+        # Create simple TCP socket connection
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((server_host, server_port))
+        
+        socket_connection = sock
+        print("Connected to EEG socket endpoint")
+        return True
+    except Exception as e:
+        print("Failed to connect to socket: {}".format(e))
+        socket_connection = None
+        return False
+
+def send_data(data):
+    """Send data through socket - simple JSON with newline delimiter"""
+    message = json.dumps(data) + '\n'
+    return message.encode('utf-8')
+
+def sender_worker():
+    """Worker thread that handles socket sending"""
+    global socket_connection, sender_running
     
-    def on_message(ws, message):
-        """Handle incoming messages."""
+    while sender_running:
         try:
-            data = json.loads(message)
-            if data.get('ok'):
-                print("✓ ACK: count={}".format(data.get('count', 'unknown')))
-            else:
-                print("✗ ERROR: {}".format(data.get('error', 'unknown')))
+            # Wait for data to send (with timeout to check sender_running)
+            try:
+                sample_data = send_queue.get(timeout=0.1)
+            except Queue.Empty:
+                continue
+            
+            # Ensure connection exists
+            if socket_connection is None:
+                if not connect_socket():
+                    continue
+            
+            # Send the data
+            try:
+                message = send_data(sample_data)
+                socket_connection.send(message)
+            except Exception as e:
+                print("Socket send error: {}".format(e))
+                # Try to reconnect on next iteration
+                socket_connection = None
+            
+            # Mark task as done
+            send_queue.task_done()
+            
         except Exception as e:
-            print("✗ Parse error: {}".format(e))
+            print("Sender thread error: {}".format(e))
+
+def start_sender_thread():
+    """Start the background sender thread"""
+    global sender_thread, sender_running
     
-    def on_error(ws, error):
-        """Handle WebSocket errors."""
-        print("✗ WebSocket error: {}".format(error))
+    if sender_thread is not None and sender_thread.is_alive():
+        return True
     
-    def on_close(ws):
-        """Handle WebSocket close."""
-        print("✗ WebSocket connection closed")
+    sender_running = True
+    sender_thread = threading.Thread(target=sender_worker)
+    sender_thread.daemon = True
+    sender_thread.start()
+    print("Socket sender thread started")
+    return True
+
+def send_eeg_data(sample_data):
+    """Queue EEG data for non-blocking socket sending"""
+    global send_queue, sender_thread
     
-    def on_open(ws):
-        """Handle WebSocket open."""
-        print("✓ Connected to EEG WebSocket endpoint")
-        print("Sending ~120 random EEG samples...")
-        
-        # Send random EEG data
-        for i in range(120):
-            # Generate random but realistic EEG values
-            sample = {
-                "attention": random.uniform(20, 80),
-                "meditation": random.uniform(15, 85),
-                "delta": random.uniform(1000, 50000),
-                "theta": random.uniform(500, 25000),
-                "lowAlpha": random.uniform(200, 15000),
-                "highAlpha": random.uniform(100, 10000),
-                "lowBeta": random.uniform(50, 8000),
-                "highBeta": random.uniform(25, 5000)
-            }
-            
-            # Send as JSON
-            message = json.dumps(sample)
-            ws.send(message)
-            
-            # Print progress every 10 samples
-            if (i + 1) % 10 == 0:
-                print("Sent {} samples...".format(i + 1))
-            
-            # Small delay between samples
-            time.sleep(0.05)
-        
-        print("✓ Finished sending all samples")
-        ws.close()
+    # Start sender thread if not running
+    if sender_thread is None or not sender_thread.is_alive():
+        start_sender_thread()
     
-    # Create WebSocket connection
-    ws = websocket.WebSocketApp(
-        ws_url,
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close
-    )
+    try:
+        # Add data to queue (non-blocking)
+        send_queue.put_nowait(sample_data)
+        return True
+    except Queue.Full:
+        print("Socket send queue full, dropping data")
+        return False
+    except Exception as e:
+        print("Queue error: {}".format(e))
+        return False
+
+def close_connection():
+    """Close the global socket connection and stop sender thread"""
+    global socket_connection, sender_running, sender_thread
     
-    # Run the WebSocket client
-    ws.run_forever()
+    # Stop sender thread
+    sender_running = False
+    if sender_thread and sender_thread.is_alive():
+        sender_thread.join(timeout=1)
+    
+    # Close socket connection
+    if socket_connection:
+        try:
+            socket_connection.close()
+        except:
+            pass
+        socket_connection = None
+    
+    print("Socket connection and sender thread closed")
 
 if __name__ == "__main__":
-    send_eeg_data()
+    # Test connection
+    if connect_socket():
+        print("Socket client ready for EEG data...")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nShutting down...")
+            close_connection()
