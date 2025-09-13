@@ -68,11 +68,6 @@ def add_row(sample_dict: Dict[str, float]) -> int:
         brainwave_data = pd.concat([brainwave_data, new_row], ignore_index=True)
         return len(brainwave_data)
 
-def tail(n: int = 20) -> pd.DataFrame:
-    """Get last n rows."""
-    with df_lock:
-        return brainwave_data.tail(n).copy()
-
 def get_center_slice() -> pd.DataFrame:
     """Get center 100 rows (excluding first 10 and last 10)."""
     with df_lock:
@@ -109,10 +104,13 @@ def save_all_data():
             print("No data to save.")
             return
         
-        # Save CSV data
+        # Save all collected data
+        processed_data = brainwave_data.copy()
+        
+        # Save processed CSV data
         csv_path = save_dir / f"brainwave_data_{timestamp}.csv"
-        brainwave_data.to_csv(csv_path, index=False)
-        print(f"Saved {len(brainwave_data)} samples to {csv_path}")
+        processed_data.to_csv(csv_path, index=False)
+        print(f"Saved {len(processed_data)} samples to {csv_path}")
         
         # Save model if it exists
         if cached_model is not None:
@@ -129,7 +127,7 @@ def save_all_data():
         meta_path = save_dir / f"metadata_{timestamp}.json"
         metadata = {
             "timestamp": timestamp,
-            "total_samples": len(brainwave_data),
+            "total_samples": len(processed_data),
             "columns": BRAINWAVE_COLUMNS,
             "model_meta": model_meta
         }
