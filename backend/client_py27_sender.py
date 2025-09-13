@@ -14,7 +14,7 @@ import Queue
 # Global socket connection
 socket_connection = None
 server_host = "10.189.119.65"
-server_port = 8001  # Different port for plain socket
+server_port = 8000  # Different port for plain socket
 
 # Threading globals
 send_queue = Queue.Queue()

@@ -1,30 +1,27 @@
 import os
 import json
 import threading
+import socket
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 import pandas as pd
 import numpy as np
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ValidationError
-import uvicorn
 
 # External hooks (try/except imports)
 try:
     import external_eeg_reader
-    print("✓ External EEG reader found")
+    print("External EEG reader found")
 except ImportError:
     external_eeg_reader = None
-    print("ℹ Using internal EEG parsing")
+    print("Using internal EEG parsing")
 
 try:
     import external_training
-    print("✓ External training module found")
+    print("External training module found")
 except ImportError:
     external_training = None
-    print("ℹ Using internal ML pipeline")
+    print("Using internal ML pipeline")
 
 # Constants & schema
 BRAINWAVE_COLUMNS = [
@@ -37,37 +34,18 @@ MODEL_PATH = "models/latest.joblib"
 Path("models").mkdir(exist_ok=True)
 Path("data").mkdir(exist_ok=True)
 
-# Pydantic models
-class BrainwaveSample(BaseModel):
-    attention: float
-    meditation: float
-    delta: float
-    theta: float
-    lowAlpha: float
-    highAlpha: float
-    lowBeta: float
-    highBeta: float
-    
-    class Config:
-        extra = 'forbid'
-
-class TrainResponse(BaseModel):
-    n_samples_trained: int
-    inertia: float
-    n_clusters: int
-    columns: List[str]
-
-class InferResponse(BaseModel):
-    label: int
-    distances: List[float]
-    columns: List[str]
-
-class ModelStatusResponse(BaseModel):
-    loaded: bool
-    n_samples_trained: Optional[int] = None
-    n_clusters: Optional[int] = None
-    columns: Optional[List[str]] = None
-    path: str
+# Simple validation function (replacing Pydantic)
+def validate_brainwave_sample(data: Dict) -> Dict[str, float]:
+    """Validate and convert brainwave sample data"""
+    result = {}
+    for col in BRAINWAVE_COLUMNS:
+        if col not in data:
+            raise ValueError(f"Missing required field: {col}")
+        try:
+            result[col] = float(data[col])
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid value for {col}: {data[col]}")
+    return result
 
 # In-memory store
 df_lock = threading.RLock()
@@ -228,7 +206,7 @@ def predict_one(sample_dict: Dict[str, float]) -> Dict[str, Any]:
     # Ensure model is loaded
     if cached_model is None:
         if not load_model():
-            raise HTTPException(status_code=400, detail="No trained model available")
+            raise ValueError("No trained model available")
     
     # Prepare data
     X = np.array([[sample_dict[col] for col in BRAINWAVE_COLUMNS]])
@@ -243,77 +221,21 @@ def predict_one(sample_dict: Dict[str, float]) -> Dict[str, Any]:
         "columns": BRAINWAVE_COLUMNS.copy()
     }
 
-# FastAPI app
-app = FastAPI(title="EEG Brainwave Backend", version="1.0.0")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"ok": True, "rows": size()}
-
-@app.get("/data")
-async def get_data(n: int = 20):
-    """Get last n rows of data."""
-    data_df = tail(n)
-    return {
-        "columns": BRAINWAVE_COLUMNS.copy(),
-        "rows": data_df.values.tolist(),
-        "count": len(data_df)
-    }
-
-@app.post("/train", response_model=TrainResponse)
-async def train_model(min_samples: int = 110, n_clusters: int = 3):
-    """Train the model on center 100 rows (excluding first 10 and last 10)."""
-    current_size = size()
-    
-    if current_size < min_samples:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Insufficient data: {current_size} rows, need at least {min_samples} for center slice training"
-        )
-    
-    # Get center slice (rows 10-109, excluding first 10 and last 10)
-    df = get_center_slice()
-    
-    # Train model
-    result = train_and_save(df, n_clusters)
-    
-    return TrainResponse(**result)
-
-@app.post("/infer", response_model=InferResponse)
-async def infer_emotion(sample: BrainwaveSample):
-    """Infer emotion from brainwave data."""
-    sample_dict = sample.dict()
-    result = predict_one(sample_dict)
-    return InferResponse(**result)
-
-@app.get("/model/status", response_model=ModelStatusResponse)
-async def model_status():
-    """Get model status."""
-    # Try to load model if not in memory
-    if cached_model is None:
-        load_model()
-    
-    return ModelStatusResponse(
-        loaded=cached_model is not None,
-        n_samples_trained=model_meta.get("n_samples_trained"),
-        n_clusters=model_meta.get("n_clusters"),
-        columns=model_meta.get("columns"),
-        path=MODEL_PATH
-    )
-
-@app.websocket("/ws/brainwaves")
-async def websocket_ingest(websocket: WebSocket):
-    """WebSocket endpoint for EEG data ingestion only."""
-    await websocket.accept()
+# Socket server functions
+def handle_client_connection(client_socket, client_address):
+    """Handle individual client connection"""
+    print(f"Client connected from {client_address}")
     
     try:
         while True:
-            # Receive message
-            data = await websocket.receive_text()
-            
-            # Handle newline-delimited JSON
-            lines = data.strip().split('\n')
+            # Receive data from client
+            data = client_socket.recv(1024)
+            if not data:
+                break
+                
+            # Decode and process each line
+            message = data.decode('utf-8')
+            lines = message.strip().split('\n')
             
             for line in lines:
                 if not line.strip():
@@ -322,94 +244,60 @@ async def websocket_ingest(websocket: WebSocket):
                 try:
                     # Parse JSON
                     frame = json.loads(line)
+                    print(f"Received: {frame}")
                     
                     # Process through external reader if available
                     parsed_frame = accept_eeg_data(frame)
                     
-                    # Validate with Pydantic
-                    sample = BrainwaveSample(**parsed_frame)
+                    # Validate data
+                    sample_dict = validate_brainwave_sample(parsed_frame)
                     
                     # Add to DataFrame
-                    new_size = add_row(sample.dict())
+                    new_size = add_row(sample_dict)
                     
                     # Send acknowledgment
-                    await websocket.send_text(json.dumps({
-                        "ok": True,
-                        "count": new_size
-                    }))
+                    response = json.dumps({"ok": True, "count": new_size}) + '\n'
+                    client_socket.send(response.encode('utf-8'))
                     
-                except (json.JSONDecodeError, ValidationError, ValueError) as e:
-                    await websocket.send_text(json.dumps({
-                        "ok": False,
-                        "error": str(e)
-                    }))
+                    print(f"Added sample, total rows: {new_size}")
                     
-    except WebSocketDisconnect:
-        print("WebSocket disconnected")
+                except (json.JSONDecodeError, ValueError) as e:
+                    error_response = json.dumps({"ok": False, "error": str(e)}) + '\n'
+                    client_socket.send(error_response.encode('utf-8'))
+                    print(f"Error processing data: {e}")
+                    
+    except Exception as e:
+        print(f"Client {client_address} error: {e}")
+    finally:
+        client_socket.close()
+        print(f"Client {client_address} disconnected")
 
-@app.websocket("/ws/brainwaves/train")
-async def websocket_train(websocket: WebSocket):
-    """WebSocket endpoint for EEG data ingestion with automatic training."""
-    await websocket.accept()
-    
-    min_samples = 110  # Default threshold - need 110 for center slice (10 + 100 + 10)
-    trained_this_session = False
+def start_socket_server(host="0.0.0.0", port=8000):
+    """Start the socket server"""
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     
     try:
+        server_socket.bind((host, port))
+        server_socket.listen(5)
+        print(f"EEG Socket Server listening on {host}:{port}")
+        
         while True:
-            # Receive message
-            data = await websocket.receive_text()
+            client_socket, client_address = server_socket.accept()
             
-            # Handle newline-delimited JSON
-            lines = data.strip().split('\n')
+            # Handle each client in a separate thread
+            client_thread = threading.Thread(
+                target=handle_client_connection,
+                args=(client_socket, client_address)
+            )
+            client_thread.daemon = True
+            client_thread.start()
             
-            for line in lines:
-                if not line.strip():
-                    continue
-                    
-                try:
-                    # Parse JSON
-                    frame = json.loads(line)
-                    
-                    # Process through external reader if available
-                    parsed_frame = accept_eeg_data(frame)
-                    
-                    # Validate with Pydantic
-                    sample = BrainwaveSample(**parsed_frame)
-                    
-                    # Add to DataFrame
-                    new_size = add_row(sample.dict())
-                    
-                    # Send acknowledgment
-                    await websocket.send_text(json.dumps({
-                        "ok": True,
-                        "count": new_size
-                    }))
-                    
-                    # Check if we should train (only once per session)
-                    if not trained_this_session and new_size >= min_samples:
-                        trained_this_session = True
-                        
-                        # Train model on center slice (rows 10-109)
-                        df = get_center_slice()
-                        result = train_and_save(df, n_clusters=3)
-                        
-                        # Send training summary
-                        await websocket.send_text(json.dumps({
-                            "trained": True,
-                            "n_samples": result["n_samples_trained"],
-                            "inertia": result["inertia"],
-                            "n_clusters": result["n_clusters"]
-                        }))
-                    
-                except (json.JSONDecodeError, ValidationError, ValueError) as e:
-                    await websocket.send_text(json.dumps({
-                        "ok": False,
-                        "error": str(e)
-                    }))
-                    
-    except WebSocketDisconnect:
-        print("WebSocket train disconnected")
+    except KeyboardInterrupt:
+        print("\nShutting down server...")
+    finally:
+        server_socket.close()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("Starting EEG Socket Server...")
+    start_socket_server()
