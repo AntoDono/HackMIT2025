@@ -58,6 +58,12 @@ brainwave_data = pd.DataFrame(columns=BRAINWAVE_COLUMNS, dtype=float)
 cached_model = None
 model_meta = {}
 
+# User session data for saving
+user_session = {
+    "full_name": None,
+    "target_emotion": None
+}
+
 def add_row(sample_dict: Dict[str, float]) -> int:
     """Add a row to the DataFrame and return new size."""
     global brainwave_data
@@ -107,14 +113,23 @@ def save_all_data():
         # Save all collected data
         processed_data = brainwave_data.copy()
         
+        # Create filename based on user session data
+        if user_session["full_name"] and user_session["target_emotion"]:
+            # Clean the name and emotion for filename (remove spaces, special chars)
+            clean_name = "".join(c for c in user_session["full_name"] if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+            clean_emotion = "".join(c for c in user_session["target_emotion"] if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+            base_filename = f"{clean_name}_{clean_emotion}_{timestamp}"
+        else:
+            base_filename = f"brainwave_data_{timestamp}"
+        
         # Save processed CSV data
-        csv_path = save_dir / f"brainwave_data_{timestamp}.csv"
+        csv_path = save_dir / f"{base_filename}.csv"
         processed_data.to_csv(csv_path, index=False)
         print(f"Saved {len(processed_data)} samples to {csv_path}")
         
         # Save model if it exists
         if cached_model is not None:
-            model_save_path = save_dir / f"model_{timestamp}.joblib"
+            model_save_path = save_dir / f"model_{base_filename}.joblib"
             import joblib
             model_bundle = {
                 "pipeline": cached_model,
@@ -124,12 +139,16 @@ def save_all_data():
             print(f"Saved model to {model_save_path}")
         
         # Save metadata
-        meta_path = save_dir / f"metadata_{timestamp}.json"
+        meta_path = save_dir / f"metadata_{base_filename}.json"
         metadata = {
             "timestamp": timestamp,
             "total_samples": len(processed_data),
             "columns": BRAINWAVE_COLUMNS,
-            "model_meta": model_meta
+            "model_meta": model_meta,
+            "user_info": {
+                "full_name": user_session["full_name"],
+                "target_emotion": user_session["target_emotion"]
+            }
         }
         with open(meta_path, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -313,6 +332,46 @@ def handle_client_connection(client_socket, client_address):
         client_socket.close()
         print(f"Client {client_address} disconnected")
 
+def collect_user_info():
+    """Collect user's full name and target emotion for save mode"""
+    global user_session
+    
+    print("\n=== User Information Collection ===")
+    
+    # Collect full name
+    while not user_session["full_name"]:
+        try:
+            full_name = input("Please enter your full name: ").strip()
+            if full_name:
+                user_session["full_name"] = full_name
+                break
+            else:
+                print("Please enter a valid name.")
+        except EOFError:
+            print("\nInput cancelled.")
+            return False
+    
+    # Collect target emotion
+    while not user_session["target_emotion"]:
+        try:
+            print("\nCommon target emotions: happy, sad, focused, relaxed, excited, calm, angry, peaceful")
+            target_emotion = input("Please enter the target emotion you want to achieve: ").strip()
+            if target_emotion:
+                user_session["target_emotion"] = target_emotion
+                break
+            else:
+                print("Please enter a valid emotion.")
+        except EOFError:
+            print("\nInput cancelled.")
+            return False
+    
+    print(f"\nUser Info Collected:")
+    print(f"  Name: {user_session['full_name']}")
+    print(f"  Target Emotion: {user_session['target_emotion']}")
+    print("=" * 35)
+    
+    return True
+
 def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
     """Start the socket server"""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -321,6 +380,12 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
     # Flag to control server shutdown
     server_running = threading.Event()
     server_running.set()
+    
+    # Collect user info if in save mode
+    if save_mode:
+        if not collect_user_info():
+            print("User information collection cancelled. Exiting...")
+            return
     
     def input_handler():
         """Handle user input in save mode"""
@@ -373,6 +438,7 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
     except KeyboardInterrupt:
         print("\nShutting down server...")
         if save_mode:
+            print("Saving data before exit...")
             save_all_data()
     finally:
         server_running.clear()
