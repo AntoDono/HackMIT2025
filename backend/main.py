@@ -2,6 +2,8 @@ import os
 import json
 import threading
 import socket
+import argparse
+import sys
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
@@ -33,6 +35,7 @@ MODEL_PATH = "models/latest.joblib"
 # Create directories if missing
 Path("models").mkdir(exist_ok=True)
 Path("data").mkdir(exist_ok=True)
+Path("saved-audio").mkdir(exist_ok=True)
 
 # Simple validation function (replacing Pydantic)
 def validate_brainwave_sample(data: Dict) -> Dict[str, float]:
@@ -93,6 +96,46 @@ def save_csv(path: str):
     """Save DataFrame to CSV."""
     with df_lock:
         brainwave_data.to_csv(path, index=False)
+
+def save_all_data():
+    """Save all collected data to the saved-audio directory."""
+    import datetime
+    
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_dir = Path("saved-audio")
+    
+    with df_lock:
+        if len(brainwave_data) == 0:
+            print("No data to save.")
+            return
+        
+        # Save CSV data
+        csv_path = save_dir / f"brainwave_data_{timestamp}.csv"
+        brainwave_data.to_csv(csv_path, index=False)
+        print(f"Saved {len(brainwave_data)} samples to {csv_path}")
+        
+        # Save model if it exists
+        if cached_model is not None:
+            model_save_path = save_dir / f"model_{timestamp}.joblib"
+            import joblib
+            model_bundle = {
+                "pipeline": cached_model,
+                "meta": model_meta
+            }
+            joblib.dump(model_bundle, model_save_path)
+            print(f"Saved model to {model_save_path}")
+        
+        # Save metadata
+        meta_path = save_dir / f"metadata_{timestamp}.json"
+        metadata = {
+            "timestamp": timestamp,
+            "total_samples": len(brainwave_data),
+            "columns": BRAINWAVE_COLUMNS,
+            "model_meta": model_meta
+        }
+        with open(meta_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        print(f"Saved metadata to {meta_path}")
 
 # External EEG reader adapter
 def parse_eeg_frame(frame: Dict[str, Any]) -> Dict[str, float]:
@@ -272,32 +315,88 @@ def handle_client_connection(client_socket, client_address):
         client_socket.close()
         print(f"Client {client_address} disconnected")
 
-def start_socket_server(host="0.0.0.0", port=8000):
+def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
     """Start the socket server"""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    
+    # Flag to control server shutdown
+    server_running = threading.Event()
+    server_running.set()
+    
+    def input_handler():
+        """Handle user input in save mode"""
+        if save_mode:
+            print("Type 'stop' to save data and exit...")
+            while server_running.is_set():
+                try:
+                    user_input = input().strip().lower()
+                    if user_input == 'stop':
+                        print("Stopping server and saving data...")
+                        save_all_data()
+                        server_running.clear()
+                        break
+                except EOFError:
+                    # Handle Ctrl+C or EOF
+                    break
+    
+    # Start input handler thread if in save mode
+    if save_mode:
+        input_thread = threading.Thread(target=input_handler)
+        input_thread.daemon = True
+        input_thread.start()
     
     try:
         server_socket.bind((host, port))
         server_socket.listen(5)
         print(f"EEG Socket Server listening on {host}:{port}")
+        if save_mode:
+            print("Save mode enabled. Type 'stop' to save data and exit.")
         
-        while True:
-            client_socket, client_address = server_socket.accept()
-            
-            # Handle each client in a separate thread
-            client_thread = threading.Thread(
-                target=handle_client_connection,
-                args=(client_socket, client_address)
-            )
-            client_thread.daemon = True
-            client_thread.start()
+        # Set socket timeout to check server_running flag periodically
+        server_socket.settimeout(1.0)
+        
+        while server_running.is_set():
+            try:
+                client_socket, client_address = server_socket.accept()
+                
+                # Handle each client in a separate thread
+                client_thread = threading.Thread(
+                    target=handle_client_connection,
+                    args=(client_socket, client_address)
+                )
+                client_thread.daemon = True
+                client_thread.start()
+                
+            except socket.timeout:
+                # Check if we should continue running
+                continue
             
     except KeyboardInterrupt:
         print("\nShutting down server...")
+        if save_mode:
+            save_all_data()
     finally:
+        server_running.clear()
         server_socket.close()
 
-if __name__ == "__main__":
+def main():
+    """Main function with argument parsing"""
+    parser = argparse.ArgumentParser(description="EEG Socket Server")
+    parser.add_argument("--save", action="store_true", 
+                       help="Enable save mode - type 'stop' to save data and exit")
+    parser.add_argument("--host", default="0.0.0.0", 
+                       help="Host to bind to (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, 
+                       help="Port to bind to (default: 8000)")
+    
+    args = parser.parse_args()
+    
     print("Starting EEG Socket Server...")
-    start_socket_server()
+    if args.save:
+        print("Save mode enabled.")
+    
+    start_socket_server(host=args.host, port=args.port, save_mode=args.save)
+
+if __name__ == "__main__":
+    main()
