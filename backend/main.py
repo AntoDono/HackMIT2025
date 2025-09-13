@@ -92,6 +92,14 @@ def tail(n: int = 20) -> pd.DataFrame:
     with df_lock:
         return brainwave_data.tail(n).copy()
 
+def get_center_slice() -> pd.DataFrame:
+    """Get center 100 rows (excluding first 10 and last 10)."""
+    with df_lock:
+        total_rows = len(brainwave_data)
+        if total_rows < 110:  # Need at least 110 rows for 10 + 100 + 10
+            raise ValueError(f"Insufficient data: {total_rows} rows, need at least 110 for center slice")
+        return brainwave_data.iloc[10:110].copy()  # Rows 10-109 (100 rows total)
+
 def size() -> int:
     """Get current size."""
     with df_lock:
@@ -254,18 +262,18 @@ async def get_data(n: int = 20):
     }
 
 @app.post("/train", response_model=TrainResponse)
-async def train_model(min_samples: int = 100, n_clusters: int = 3):
-    """Train the model."""
+async def train_model(min_samples: int = 110, n_clusters: int = 3):
+    """Train the model on center 100 rows (excluding first 10 and last 10)."""
     current_size = size()
     
     if current_size < min_samples:
         raise HTTPException(
             status_code=400, 
-            detail=f"Insufficient data: {current_size} rows, need at least {min_samples}"
+            detail=f"Insufficient data: {current_size} rows, need at least {min_samples} for center slice training"
         )
     
-    # Get current data
-    df = tail(current_size)
+    # Get center slice (rows 10-109, excluding first 10 and last 10)
+    df = get_center_slice()
     
     # Train model
     result = train_and_save(df, n_clusters)
@@ -344,7 +352,7 @@ async def websocket_train(websocket: WebSocket):
     """WebSocket endpoint for EEG data ingestion with automatic training."""
     await websocket.accept()
     
-    min_samples = 100  # Default threshold
+    min_samples = 110  # Default threshold - need 110 for center slice (10 + 100 + 10)
     trained_this_session = False
     
     try:
@@ -382,8 +390,8 @@ async def websocket_train(websocket: WebSocket):
                     if not trained_this_session and new_size >= min_samples:
                         trained_this_session = True
                         
-                        # Train model
-                        df = tail(new_size)
+                        # Train model on center slice (rows 10-109)
+                        df = get_center_slice()
                         result = train_and_save(df, n_clusters=3)
                         
                         # Send training summary
