@@ -24,6 +24,7 @@ from suno_music_generator import SunoMusicGenerator
 load_dotenv()
 
 SUNO_API_KEY = os.getenv('SUNO_API_KEY')
+REALTIME = os.getenv('REALTIME', 'true').lower() == 'true'
 
 # Import ML inference
 try:
@@ -135,6 +136,22 @@ generated_music_files = []
 current_audio_process = None
 audio_process_lock = threading.Lock()
 
+def get_available_audio_files():
+    """Get list of available audio files in the generated-music directory."""
+    audio_dir = Path("generated-music")
+    if not audio_dir.exists():
+        return []
+    
+    audio_files = []
+    for file_path in audio_dir.glob("*.mp3"):
+        audio_files.append({
+            "filename": file_path.name,
+            "filepath": str(file_path),
+            "description": file_path.stem.replace('_', ' ').replace('-', ' ')
+        })
+    
+    return audio_files
+
 def stop_current_audio():
     """Stop the currently playing audio if any."""
     global current_audio_process
@@ -205,6 +222,62 @@ def play_audio_file(filepath: str):
         print(f"Unexpected error playing audio: {e}")
         with audio_process_lock:
             current_audio_process = None
+
+def select_and_play_existing_music(classified_emotion: str, eeg_analysis: Dict[str, Any], sample_count: int):
+    """Select and play existing music from available files."""
+    try:
+        # Get available audio files
+        available_files = get_available_audio_files()
+        
+        if not available_files:
+            print("⚠️  No audio files available in generated-music directory")
+            return
+        
+        print(f"🎵 Selecting from {len(available_files)} available music files based on emotion: {classified_emotion}")
+        
+        # Use LLM to select the most appropriate music
+        selection_result = llm_client.select_music_from_available(classified_emotion, eeg_analysis, available_files)
+        
+        selected_file = selection_result.get('selected_file')
+        selection_reasoning = selection_result.get('selection_reasoning', 'Music selected based on emotional analysis.')
+        
+        if not selected_file:
+            print("⚠️  No suitable music file selected")
+            return
+        
+        filepath = selected_file['filepath']
+        print(f"✅ Selected music: {selected_file['filename']}")
+        print(f"💭 Selection reasoning: {selection_reasoning}")
+        
+        # Add to generated music files list for tracking
+        import datetime
+        generated_music_files.append({
+            "description": f"Selected: {selected_file['description']}",
+            "filepath": filepath,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "sample_count": sample_count,
+            "selection_reasoning": selection_reasoning
+        })
+        
+        # Play the selected music
+        print(f"🔊 Playing selected music...")
+        play_thread = threading.Thread(target=play_audio_file, args=(filepath,))
+        play_thread.daemon = True
+        play_thread.start()
+        
+        # Broadcast music selection success
+        music_broadcast = {
+            "type": "music_selected",
+            "description": f"Selected: {selected_file['description']}",
+            "filepath": filepath,
+            "sample_count": sample_count,
+            "selection_reasoning": selection_reasoning,
+            "filename": selected_file['filename']
+        }
+        data_queue.put(json.dumps(music_broadcast))
+        
+    except Exception as e:
+        print(f"⚠️  Music selection error: {e}")
 
 def generate_music_async(song_description: str, sample_count: int):
     """Generate music asynchronously using Suno API."""
@@ -280,19 +353,32 @@ def music_generation_worker():
                 
             song_description = request["song_description"]
             sample_count = request["sample_count"]
+            classified_emotion = request.get("classified_emotion", "unknown")
+            eeg_analysis = request.get("eeg_analysis", {})
             
             # Set the flag to indicate music generation is in progress
             with music_generation_lock:
                 is_generating_music = True
-                print("🎵 Music generation started - pausing song descriptions")
+                if REALTIME:
+                    print("🎵 Music generation started - pausing song descriptions")
+                else:
+                    print("🎵 Music selection started - pausing song descriptions")
             
             try:
-                generate_music_async(song_description, sample_count)
+                if REALTIME:
+                    # Generate new music using Suno API
+                    generate_music_async(song_description, sample_count)
+                else:
+                    # Select from existing music files
+                    select_and_play_existing_music(classified_emotion, eeg_analysis, sample_count)
             finally:
                 # Always clear the flag when done, even if there's an error
                 with music_generation_lock:
                     is_generating_music = False
-                    print("✅ Music generation completed - resuming song descriptions")
+                    if REALTIME:
+                        print("✅ Music generation completed - resuming song descriptions")
+                    else:
+                        print("✅ Music selection completed - resuming song descriptions")
             
             music_generation_queue.task_done()
             
@@ -346,8 +432,9 @@ def add_row(sample_dict: Dict[str, float]) -> int:
                         print(f"⏳ Skipping song description - music generation in progress")
 
                 # Queue music generation every 50 data points (asynchronous) - only if we have a description
-                if new_size % 30 == 0 and suno_client and song_description:
-                    analysis_result = llm_client.analyze_current_eeg_data(labeled_sample_dict)
+                if new_size % 30 == 0 and (suno_client or not REALTIME) and song_description:
+                    # Pass the inferred emotion to the LLM analysis (85% accuracy)
+                    analysis_result = llm_client.analyze_current_eeg_data(labeled_sample_dict, predicted_emotion)
                     current_emotion_analysis = analysis_result['emotional_analysis']
                     current_status = analysis_result['current_status']
                     print(f"🧠 Emotion Analysis: {current_emotion_analysis}")
@@ -355,10 +442,15 @@ def add_row(sample_dict: Dict[str, float]) -> int:
                     
                     music_request = {
                         "song_description": song_description,
-                        "sample_count": new_size
+                        "sample_count": new_size,
+                        "classified_emotion": predicted_emotion,
+                        "eeg_analysis": brainwave_data.copy()
                     }
                     music_generation_queue.put(music_request)
-                    print(f"🎼 Queued music generation based on song description (sample {new_size})")
+                    if REALTIME:
+                        print(f"🎼 Queued music generation based on song description (sample {new_size})")
+                    else:
+                        print(f"🎼 Queued music selection based on emotion: {predicted_emotion} (sample {new_size})")
 
                 # Add to emotion history
                 import datetime
@@ -885,6 +977,12 @@ def main():
     print("Starting EEG Socket Server...")
     if args.save:
         print("Save mode enabled - emotion inference and song description will be skipped.")
+    
+    print(f"REALTIME mode: {'enabled' if REALTIME else 'disabled'}")
+    if not REALTIME:
+        print("Music will be selected from existing files in generated-music directory")
+    else:
+        print("Music will be generated in real-time using Suno API")
     
     start_socket_server(host=args.host, port=args.port, save_mode=args.save)
 
