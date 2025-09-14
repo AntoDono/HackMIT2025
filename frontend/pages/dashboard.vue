@@ -30,29 +30,57 @@
 
     <div class="container mx-auto px-6 py-8">
       <!-- Current Emotion and Data Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <!-- Current Emotion Display -->
-        <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6">
-          <div class="text-center mb-4">
-            <div class="relative mb-4">
-              <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-blue-100 to-sky-100 flex items-center justify-center border-4 border-purple-200">
-                <span class="text-2xl">{{ getEmotionEmoji(currentEmotion) }}</span>
+        <div class="lg:col-span-1 bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6">
+          <!-- Emotion Status Grid -->
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <!-- Estimated Emotion (ML Classification) -->
+            <div class="text-center">
+              <div class="relative mb-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-gradient-to-r from-blue-100 to-sky-100 flex items-center justify-center border-3 border-blue-200">
+                  <span class="text-lg">{{ getEmotionEmoji(currentEmotion) }}</span>
+                </div>
+                <div class="absolute -inset-1 rounded-full border-2 border-blue-300 animate-pulse"></div>
               </div>
-              <div class="absolute -inset-1 rounded-full border-2 border-purple-300 animate-pulse"></div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                Estimated Emotion
+              </div>
+              <h3 class="text-sm font-bold text-slate-800 mb-1 capitalize">
+                {{ currentEmotion || 'Detecting...' }}
+              </h3>
+              <div class="text-xs text-slate-400">
+                Real-time ML classification
+              </div>
             </div>
             
-            <h3 class="text-lg font-bold text-slate-800 mb-1 capitalize">
-              {{ currentEmotion || 'Detecting...' }}
-            </h3>
-            
-            <div class="text-slate-500 text-xs mb-2">
-              {{ lastUpdateTime }}
+            <!-- Current Status (LLM Analysis) -->
+            <div class="text-center">
+              <div class="relative mb-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center border-3 border-purple-200">
+                  <span class="text-lg">{{ getEmotionEmoji(currentStatus) }}</span>
+                </div>
+                <div class="absolute -inset-1 rounded-full border-2 border-purple-300 animate-pulse"></div>
+              </div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                Current Status
+              </div>
+              <h3 class="text-sm font-bold text-slate-800 mb-1 capitalize">
+                {{ currentStatus || 'Analyzing...' }}
+              </h3>
+              <div class="text-xs text-slate-400">
+                Most accurate analysis
+              </div>
             </div>
+          </div>
+          
+          <div class="text-slate-500 text-xs text-center mb-4">
+            {{ lastUpdateTime }}
           </div>
           
           <!-- Real-time Emotion Analysis -->
           <div class="border-t border-slate-200 pt-3">
-            <div class="text-xs text-slate-500 mb-1">Current Analysis:</div>
+            <div class="text-xs text-slate-500 mb-1 font-bold">Detailed Analysis:</div>
             <div class="text-sm text-slate-700 leading-relaxed">
               {{ currentEmotionAnalysis || 'Analyzing brainwave patterns...' }}
             </div>
@@ -60,7 +88,7 @@
         </div>
 
         <!-- Brainwave Data Numbers -->
-        <div class="lg:col-span-3">
+        <div class="lg:col-span-2">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div v-for="(value, key) in currentBrainwaveData" :key="key" 
                  class="bg-white/60 backdrop-blur-sm rounded-xl border border-blue-200 shadow-lg p-4">
@@ -84,41 +112,56 @@
           Live Brainwave Patterns
         </h2>
         
-        <!-- Wave Visualizations - 2x3 Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Wave Visualizations - 2 per row Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Beta Waves -->
           <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
             <h4 class="text-sm font-medium text-purple-600 mb-2">Beta Waves (Focus & Activity)</h4>
             <div class="text-xs text-slate-500 mb-2">Low Beta (Purple) • High Beta (Pink)</div>
-            <canvas ref="betaCanvas" class="w-full h-32"></canvas>
+            <div class="relative">
+              <canvas ref="betaCanvas" class="w-full h-40 cursor-crosshair"></canvas>
+              <div ref="betaTooltip" class="absolute bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none opacity-0 transition-opacity z-10"></div>
+            </div>
           </div>
           
           <!-- Alpha Waves -->
           <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
             <h4 class="text-sm font-medium text-blue-600 mb-2">Alpha Waves (Relaxation & Awareness)</h4>
             <div class="text-xs text-slate-500 mb-2">Low Alpha (Cyan) • High Alpha (Green)</div>
-            <canvas ref="alphaCanvas" class="w-full h-32"></canvas>
+            <div class="relative">
+              <canvas ref="alphaCanvas" class="w-full h-40 cursor-crosshair"></canvas>
+              <div ref="alphaTooltip" class="absolute bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none opacity-0 transition-opacity z-10"></div>
+            </div>
           </div>
           
           <!-- Gamma Waves -->
           <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
             <h4 class="text-sm font-medium text-pink-600 mb-2">Gamma Waves (High Cognition)</h4>
             <div class="text-xs text-slate-500 mb-2">Low Gamma (Magenta) • Mid Gamma (Hot Pink)</div>
-            <canvas ref="gammaCanvas" class="w-full h-32"></canvas>
+            <div class="relative">
+              <canvas ref="gammaCanvas" class="w-full h-40 cursor-crosshair"></canvas>
+              <div ref="gammaTooltip" class="absolute bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none opacity-0 transition-opacity z-10"></div>
+            </div>
           </div>
           
           <!-- Delta & Theta Waves -->
           <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
             <h4 class="text-sm font-medium text-amber-600 mb-2">Deep Brain Waves</h4>
             <div class="text-xs text-slate-500 mb-2">Delta (Amber) • Theta (Red)</div>
-            <canvas ref="deltaThetaCanvas" class="w-full h-32"></canvas>
+            <div class="relative">
+              <canvas ref="deltaThetaCanvas" class="w-full h-40 cursor-crosshair"></canvas>
+              <div ref="deltaThetaTooltip" class="absolute bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none opacity-0 transition-opacity z-10"></div>
+            </div>
           </div>
           
           <!-- Mental States -->
           <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
             <h4 class="text-sm font-medium text-indigo-600 mb-2">Mental States</h4>
             <div class="text-xs text-slate-500 mb-2">Attention (Indigo) • Meditation (Lime)</div>
-            <canvas ref="mentalCanvas" class="w-full h-32"></canvas>
+            <div class="relative">
+              <canvas ref="mentalCanvas" class="w-full h-40 cursor-crosshair"></canvas>
+              <div ref="mentalTooltip" class="absolute bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none opacity-0 transition-opacity z-10"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -163,6 +206,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const connectionStatus = ref('disconnected')
 const currentEmotion = ref('')
 const currentEmotionAnalysis = ref('')
+const currentStatus = ref('unknown')
 const sampleCount = ref(0)
 const lastUpdateTime = ref('')
 const currentBrainwaveData = ref({})
@@ -177,6 +221,11 @@ let alphaCanvas = ref(null)
 let gammaCanvas = ref(null)
 let deltaThetaCanvas = ref(null)
 let mentalCanvas = ref(null)
+let betaTooltip = ref(null)
+let alphaTooltip = ref(null)
+let gammaTooltip = ref(null)
+let deltaThetaTooltip = ref(null)
+let mentalTooltip = ref(null)
 let betaContext = null
 let alphaContext = null
 let gammaContext = null
@@ -286,6 +335,98 @@ function getProgressWidth(key, value) {
   }
 }
 
+// Calculate dynamic max value for auto-adjusting bounds
+function calculateDynamicMax(dataPoints, key, defaultMax) {
+  if (dataPoints.length === 0) return defaultMax
+  
+  const values = dataPoints.map(point => point[key] || 0).filter(val => val > 0)
+  if (values.length === 0) return defaultMax
+  
+  const maxValue = Math.max(...values)
+  const minValue = Math.min(...values)
+  
+  // Add 20% padding above the max value for better visualization
+  const paddedMax = maxValue * 1.2
+  
+  // Ensure we don't go below a reasonable minimum
+  const reasonableMin = defaultMax * 0.1
+  
+  return Math.max(paddedMax, reasonableMin)
+}
+
+// Draw grid and axes
+function drawGridAndAxes(ctx, canvas, timeRange = '2min') {
+  ctx.save()
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)'
+  ctx.lineWidth = 1
+  
+  // Draw horizontal grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = (i / 4) * canvas.height
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(canvas.width, y)
+    ctx.stroke()
+  }
+  
+  // Draw vertical grid lines
+  for (let i = 0; i <= 4; i++) {
+    const x = (i / 4) * canvas.width
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.lineTo(x, canvas.height)
+    ctx.stroke()
+  }
+  
+  // Draw axes labels
+  ctx.fillStyle = 'rgba(100, 116, 139, 0.8)'
+  ctx.font = '10px system-ui'
+  ctx.textAlign = 'right'
+  ctx.fillText('High', canvas.width - 2, 12)
+  ctx.fillText('Low', canvas.width - 2, canvas.height - 2)
+  ctx.textAlign = 'left'
+  ctx.fillText('Now', 2, canvas.height - 2)
+  ctx.fillText(`-${timeRange}`, 2, 12)
+  
+  ctx.restore()
+}
+
+// Setup mouse events for tooltip
+function setupCanvasTooltip(canvas, tooltip, keys, colors, defaultMaxValues) {
+  if (!canvas || !tooltip) return
+  
+  canvas.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    
+    // Calculate data point index
+    const dataIndex = Math.round((x / canvas.width) * (brainwaveDataPoints.value.length - 1))
+    
+    if (dataIndex >= 0 && dataIndex < brainwaveDataPoints.value.length) {
+      const dataPoint = brainwaveDataPoints.value[dataIndex]
+      let tooltipContent = ''
+      
+      keys.forEach((key, index) => {
+        const value = dataPoint[key] || 0
+        const displayValue = getDisplayValue(key, value)
+        const dynamicMax = calculateDynamicMax(brainwaveDataPoints.value, key, defaultMaxValues[index])
+        const percentage = ((value / dynamicMax) * 100).toFixed(1)
+        tooltipContent += `<span style="color: ${colors[index]}">${getDisplayName(key)}: ${displayValue} (${percentage}%)</span><br>`
+      })
+      
+      tooltip.innerHTML = tooltipContent
+      tooltip.style.left = `${x + 10}px`
+      tooltip.style.top = `${y - 10}px`
+      tooltip.style.opacity = '1'
+    }
+  })
+  
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.style.opacity = '0'
+  })
+}
+
 function connectSSE() {
   try {
     eventSource = new EventSource('http://localhost:8001')
@@ -345,6 +486,7 @@ function handleSSEMessage(data) {
       currentBrainwaveData.value = data.data || {}
       currentLabeledData.value = data.labeled_data || {}
       currentEmotionAnalysis.value = data.current_emotion_analysis || ''
+      currentStatus.value = data.current_status || 'neutral'
       sampleCount.value = data.sample_count
       lastUpdateTime.value = new Date().toLocaleTimeString()
       
@@ -366,6 +508,7 @@ function initCanvas() {
     betaContext = betaCanvas.value.getContext('2d')
     betaCanvas.value.width = betaCanvas.value.offsetWidth
     betaCanvas.value.height = betaCanvas.value.offsetHeight
+    setupCanvasTooltip(betaCanvas.value, betaTooltip.value, ['lowBeta', 'highBeta'], ['#8b5cf6', '#ec4899'], [50000, 50000])
   }
   
   // Initialize Alpha canvas  
@@ -373,6 +516,7 @@ function initCanvas() {
     alphaContext = alphaCanvas.value.getContext('2d')
     alphaCanvas.value.width = alphaCanvas.value.offsetWidth
     alphaCanvas.value.height = alphaCanvas.value.offsetHeight
+    setupCanvasTooltip(alphaCanvas.value, alphaTooltip.value, ['lowAlpha', 'highAlpha'], ['#06b6d4', '#10b981'], [50000, 50000])
   }
   
   // Initialize Gamma canvas
@@ -380,6 +524,7 @@ function initCanvas() {
     gammaContext = gammaCanvas.value.getContext('2d')
     gammaCanvas.value.width = gammaCanvas.value.offsetWidth
     gammaCanvas.value.height = gammaCanvas.value.offsetHeight
+    setupCanvasTooltip(gammaCanvas.value, gammaTooltip.value, ['lowGamma', 'midGamma'], ['#ec4899', '#be185d'], [20000, 20000])
   }
   
   // Initialize Delta/Theta canvas
@@ -387,6 +532,7 @@ function initCanvas() {
     deltaThetaContext = deltaThetaCanvas.value.getContext('2d')
     deltaThetaCanvas.value.width = deltaThetaCanvas.value.offsetWidth
     deltaThetaCanvas.value.height = deltaThetaCanvas.value.offsetHeight
+    setupCanvasTooltip(deltaThetaCanvas.value, deltaThetaTooltip.value, ['delta', 'theta'], ['#f59e0b', '#ef4444'], [200000, 200000])
   }
   
   // Initialize Mental States canvas
@@ -394,171 +540,79 @@ function initCanvas() {
     mentalContext = mentalCanvas.value.getContext('2d')
     mentalCanvas.value.width = mentalCanvas.value.offsetWidth
     mentalCanvas.value.height = mentalCanvas.value.offsetHeight
+    setupCanvasTooltip(mentalCanvas.value, mentalTooltip.value, ['attention', 'meditation'], ['#6366f1', '#84cc16'], [100, 100])
   }
+}
+
+function drawWaveChart(context, canvas, keys, colors, defaultMaxValues) {
+  if (!context || !canvas) return
+  
+  const ctx = context
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  
+  // Draw grid and axes first
+  drawGridAndAxes(ctx, canvas)
+  
+  keys.forEach((key, keyIndex) => {
+    // Calculate dynamic max value based on actual data
+    const dynamicMaxValue = calculateDynamicMax(brainwaveDataPoints.value, key, defaultMaxValues[keyIndex])
+    const color = colors[keyIndex]
+    
+    // Draw main wave line
+    ctx.beginPath()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2.5
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    
+    brainwaveDataPoints.value.forEach((dataPoint, index) => {
+      const x = (index / (brainwaveDataPoints.value.length - 1)) * canvas.width
+      const value = dataPoint[key] || 0
+      const normalizedValue = Math.min(value / dynamicMaxValue, 1)
+      const y = canvas.height - (normalizedValue * canvas.height)
+      
+      if (index === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
+    })
+    ctx.stroke()
+    
+    // Draw data points for better visibility
+    if (brainwaveDataPoints.value.length < 50) {
+      ctx.fillStyle = color
+      brainwaveDataPoints.value.forEach((dataPoint, index) => {
+        const x = (index / (brainwaveDataPoints.value.length - 1)) * canvas.width
+        const value = dataPoint[key] || 0
+        const normalizedValue = Math.min(value / dynamicMaxValue, 1)
+        const y = canvas.height - (normalizedValue * canvas.height)
+        
+        ctx.beginPath()
+        ctx.arc(x, y, 2, 0, 2 * Math.PI)
+        ctx.fill()
+      })
+    }
+  })
 }
 
 function updateWaveVisualization() {
   if (brainwaveDataPoints.value.length === 0) return
   
-  // Update Beta Waves (lowBeta, highBeta)
-  if (betaContext) {
-    const canvas = betaCanvas.value
-    const ctx = betaContext
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    const betaKeys = ['lowBeta', 'highBeta']
-    const betaColors = ['#8b5cf6', '#ec4899'] // Purple, Pink
-    
-    betaKeys.forEach((key, keyIndex) => {
-      ctx.beginPath()
-      ctx.strokeStyle = betaColors[keyIndex]
-      ctx.lineWidth = 2
-      
-      brainwaveDataPoints.value.forEach((dataPoint, index) => {
-        const x = (index / brainwaveDataPoints.value.length) * canvas.width
-        const value = dataPoint[key] || 0
-        // Normalize beta values (they're typically higher, so scale down)
-        const normalizedValue = Math.min(value / 50000, 1) // Scale for typical beta range
-        const y = canvas.height - (normalizedValue * canvas.height)
-        
-        if (index === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-      
-      ctx.stroke()
-    })
-  }
+  // Update Beta Waves
+  drawWaveChart(betaContext, betaCanvas.value, ['lowBeta', 'highBeta'], ['#8b5cf6', '#ec4899'], [50000, 50000])
   
-  // Update Alpha Waves (lowAlpha, highAlpha)
-  if (alphaContext) {
-    const canvas = alphaCanvas.value
-    const ctx = alphaContext
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    const alphaKeys = ['lowAlpha', 'highAlpha']
-    const alphaColors = ['#06b6d4', '#10b981'] // Cyan, Green
-    
-    alphaKeys.forEach((key, keyIndex) => {
-      ctx.beginPath()
-      ctx.strokeStyle = alphaColors[keyIndex]
-      ctx.lineWidth = 2
-      
-      brainwaveDataPoints.value.forEach((dataPoint, index) => {
-        const x = (index / brainwaveDataPoints.value.length) * canvas.width
-        const value = dataPoint[key] || 0
-        // Normalize alpha values
-        const normalizedValue = Math.min(value / 50000, 1) // Scale for typical alpha range
-        const y = canvas.height - (normalizedValue * canvas.height)
-        
-        if (index === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-      
-      ctx.stroke()
-    })
-  }
+  // Update Alpha Waves
+  drawWaveChart(alphaContext, alphaCanvas.value, ['lowAlpha', 'highAlpha'], ['#06b6d4', '#10b981'], [50000, 50000])
   
-  // Update Gamma Waves (lowGamma, midGamma)
-  if (gammaContext) {
-    const canvas = gammaCanvas.value
-    const ctx = gammaContext
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    const gammaKeys = ['lowGamma', 'midGamma']
-    const gammaColors = ['#ec4899', '#be185d'] // Hot Pink, Dark Pink
-    
-    gammaKeys.forEach((key, keyIndex) => {
-      ctx.beginPath()
-      ctx.strokeStyle = gammaColors[keyIndex]
-      ctx.lineWidth = 2
-      
-      brainwaveDataPoints.value.forEach((dataPoint, index) => {
-        const x = (index / brainwaveDataPoints.value.length) * canvas.width
-        const value = dataPoint[key] || 0
-        // Normalize gamma values (typically lower than other bands)
-        const normalizedValue = Math.min(value / 20000, 1) // Scale for typical gamma range
-        const y = canvas.height - (normalizedValue * canvas.height)
-        
-        if (index === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-      
-      ctx.stroke()
-    })
-  }
+  // Update Gamma Waves
+  drawWaveChart(gammaContext, gammaCanvas.value, ['lowGamma', 'midGamma'], ['#ec4899', '#be185d'], [20000, 20000])
   
   // Update Delta/Theta Waves
-  if (deltaThetaContext) {
-    const canvas = deltaThetaCanvas.value
-    const ctx = deltaThetaContext
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    const deltaThetaKeys = ['delta', 'theta']
-    const deltaThetaColors = ['#f59e0b', '#ef4444'] // Amber, Red
-    
-    deltaThetaKeys.forEach((key, keyIndex) => {
-      ctx.beginPath()
-      ctx.strokeStyle = deltaThetaColors[keyIndex]
-      ctx.lineWidth = 2
-      
-      brainwaveDataPoints.value.forEach((dataPoint, index) => {
-        const x = (index / brainwaveDataPoints.value.length) * canvas.width
-        const value = dataPoint[key] || 0
-        // Delta and theta are typically very high values
-        const normalizedValue = Math.min(value / 200000, 1)
-        const y = canvas.height - (normalizedValue * canvas.height)
-        
-        if (index === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-      
-      ctx.stroke()
-    })
-  }
+  drawWaveChart(deltaThetaContext, deltaThetaCanvas.value, ['delta', 'theta'], ['#f59e0b', '#ef4444'], [200000, 200000])
   
-  // Update Mental States (attention, meditation)
-  if (mentalContext) {
-    const canvas = mentalCanvas.value
-    const ctx = mentalContext
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    const mentalKeys = ['attention', 'meditation']
-    const mentalColors = ['#6366f1', '#84cc16'] // Indigo, Lime
-    
-    mentalKeys.forEach((key, keyIndex) => {
-      ctx.beginPath()
-      ctx.strokeStyle = mentalColors[keyIndex]
-      ctx.lineWidth = 2
-      
-      brainwaveDataPoints.value.forEach((dataPoint, index) => {
-        const x = (index / brainwaveDataPoints.value.length) * canvas.width
-        const value = dataPoint[key] || 0
-        // Attention and meditation are 0-100 scale
-        const normalizedValue = value / 100
-        const y = canvas.height - (normalizedValue * canvas.height)
-        
-        if (index === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-      
-      ctx.stroke()
-    })
-  }
+  // Update Mental States
+  drawWaveChart(mentalContext, mentalCanvas.value, ['attention', 'meditation'], ['#6366f1', '#84cc16'], [100, 100])
 }
 
 onMounted(() => {

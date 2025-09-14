@@ -1,0 +1,32 @@
+{
+  "timestamp": "20250913_175256",
+  "total_samples": 132,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta",
+    "lowGamma",
+    "midGamma"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Fahmi Omer",
+    "target_emotion": "focused"
+  },
+  "gamma_reconstructed": true,
+  "reconstruction_method": "beta_correlation_with_noise",
+  "reconstruction_coefficients": {
+    "lowGamma_to_highBeta": 0.6,
+    "lowGamma_to_attention": 0.3,
+    "lowGamma_to_lowBeta": 0.4,
+    "midGamma_to_lowGamma": 0.7,
+    "midGamma_to_highBeta": 0.4,
+    "midGamma_to_attention": 0.2,
+    "gamma_beta_coupling": 0.5
+  }
+}

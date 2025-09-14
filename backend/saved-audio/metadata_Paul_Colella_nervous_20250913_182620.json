@@ -16,7 +16,7 @@
   "model_meta": {},
   "user_info": {
     "full_name": "Paul Colella",
-    "target_emotion": "nervous"
+    "target_emotion": "stress"
   },
   "gamma_reconstructed": true,
   "reconstruction_method": "beta_correlation_with_noise",

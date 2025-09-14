@@ -1,0 +1,21 @@
+{
+  "timestamp": "20250914_074416",
+  "total_samples": 204,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta",
+    "lowGamma",
+    "midGamma"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "youwei zhen",
+    "target_emotion": "relaxed"
+  }
+}

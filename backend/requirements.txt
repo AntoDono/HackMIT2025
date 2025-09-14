@@ -4,3 +4,4 @@ scikit-learn
 joblib
 python-dotenv
 cerebras-cloud-sdk
+groq

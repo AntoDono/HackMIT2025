@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 
 from dotenv import load_dotenv
-from cerebras_client import CerebrasClient
+from llm_client import LLMClient
 
 # Import Suno music generator
 sys.path.append('../suno')
@@ -62,8 +62,9 @@ Path("data").mkdir(exist_ok=True)
 Path("saved-audio").mkdir(exist_ok=True)
 Path("generated-music").mkdir(exist_ok=True)
 
-cerebras_client = CerebrasClient()
+llm_client = LLMClient()
 current_emotion_analysis = "Analyzing brainwave patterns..."
+current_status = "unknown"
 
 # Initialize Suno client if API key is available
 suno_client = None
@@ -301,7 +302,7 @@ def music_generation_worker():
 
 def add_row(sample_dict: Dict[str, float]) -> int:
     """Add a row to the DataFrame and return new size."""
-    global brainwave_data, current_emotion_analysis
+    global brainwave_data, current_emotion_analysis, current_status
 
     # Create labeled brainwave data BEFORE emotion analysis
     labeled_sample_dict = {
@@ -326,7 +327,7 @@ def add_row(sample_dict: Dict[str, float]) -> int:
         
         # Perform emotion inference every 10 data points (and only if we have enough data)
         # Skip emotion inference and song description in save mode
-        if not is_save and new_size > 5 and new_size % 5 == 0 and infer_emotion is not None:
+        if not is_save and new_size > 10 and new_size % 3 == 0 and infer_emotion is not None:
             try:
                 predicted_emotion = infer_emotion(brainwave_data.copy())
                 print(f"🧠 Emotion Inference: {predicted_emotion} (based on {new_size} samples)")
@@ -335,15 +336,18 @@ def add_row(sample_dict: Dict[str, float]) -> int:
                 song_description = None
                 with music_generation_lock:
                     if not is_generating_music:
-                        song_description = cerebras_client.generate_song_description(predicted_emotion, brainwave_data.copy())
+                        song_description = llm_client.generate_song_description(predicted_emotion, brainwave_data.copy())
                         print(f"🎵 Song Description: {song_description}")
                     else:
                         print(f"⏳ Skipping song description - music generation in progress")
 
                 # Queue music generation every 50 data points (asynchronous) - only if we have a description
                 if new_size % 30 == 0 and suno_client and song_description:
-                    current_emotion_analysis = cerebras_client.analyze_current_eeg_data(labeled_sample_dict)
+                    analysis_result = llm_client.analyze_current_eeg_data(labeled_sample_dict)
+                    current_emotion_analysis = analysis_result['emotional_analysis']
+                    current_status = analysis_result['current_status']
                     print(f"🧠 Emotion Analysis: {current_emotion_analysis}")
+                    print(f"📊 Current Status: {current_status}")
                     
                     music_request = {
                         "song_description": song_description,
@@ -385,6 +389,7 @@ def add_row(sample_dict: Dict[str, float]) -> int:
             "data": sample_dict,  # Raw data for compatibility
             "labeled_data": labeled_sample_dict,  # Labeled data for frontend display
             "current_emotion_analysis": current_emotion_analysis,  # Real-time emotion analysis
+            "current_status": current_status,  # Current emotional status
             "sample_count": new_size,
             "timestamp": time.time()
         }

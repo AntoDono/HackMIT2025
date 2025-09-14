@@ -1,0 +1,21 @@
+{
+  "timestamp": "20250914_083226",
+  "total_samples": 142,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta",
+    "lowGamma",
+    "midGamma"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Youwei Zhen",
+    "target_emotion": "schizophrenic-episode"
+  }
+}

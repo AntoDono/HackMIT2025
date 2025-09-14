@@ -93,7 +93,7 @@ def load_single_file(csv_path):
     return df
 
 
-def apply_masking(data, mask_ratio=0.2):
+def apply_masking(data, mask_ratio=0.1):
     """
     Apply random masking to input data by setting mask_ratio of values to 0.
     
@@ -158,6 +158,65 @@ def create_chunks(df, chunk_size=CHUNK_SIZE):
     return np.array(chunks)
 
 
+def balance_classes(X, y, emotion_counts, multiplier=1.5, min_samples_threshold=10):
+    """
+    Balance classes by capping each class at multiplier * minimum class size.
+    
+    Args:
+        X (np.array): Input features
+        y (np.array): Labels
+        emotion_counts (dict): Count of samples per emotion
+        multiplier (float): Multiplier for the minimum class size (default 1.5)
+        min_samples_threshold (int): Minimum samples threshold to consider (default 10)
+        
+    Returns:
+        tuple: (X_balanced, y_balanced)
+    """
+    print(f"\nApplying class balancing with {multiplier}x multiplier...")
+    
+    # Set random seed for reproducible balancing
+    np.random.seed(RANDOM_STATE)
+    
+    # Find classes with reasonable sample counts (above threshold)
+    reasonable_classes = {emotion: count for emotion, count in emotion_counts.items() 
+                         if count >= min_samples_threshold}
+    
+    if not reasonable_classes:
+        print(f"⚠️  No classes have >= {min_samples_threshold} samples, using original minimum")
+        min_samples = min(emotion_counts.values())
+    else:
+        min_samples = min(reasonable_classes.values())
+        print(f"  Using minimum from classes with >= {min_samples_threshold} samples: {min_samples}")
+    
+    # Calculate the cap
+    max_samples_per_class = int(min_samples * multiplier)
+    print(f"  Capping each class at: {max_samples_per_class} samples")
+    
+    # Balance the dataset
+    balanced_X = []
+    balanced_y = []
+    
+    for emotion in emotion_counts.keys():
+        # Get indices for this emotion
+        emotion_indices = np.where(y == emotion)[0]
+        current_count = len(emotion_indices)
+        
+        if current_count <= max_samples_per_class:
+            # Use all samples if under the cap
+            selected_indices = emotion_indices
+            print(f"  {emotion}: keeping all {current_count} samples")
+        else:
+            # Randomly sample up to the cap
+            selected_indices = np.random.choice(emotion_indices, max_samples_per_class, replace=False)
+            print(f"  {emotion}: reduced from {current_count} to {max_samples_per_class} samples")
+        
+        # Add selected samples
+        balanced_X.extend(X[selected_indices])
+        balanced_y.extend(y[selected_indices])
+    
+    return np.array(balanced_X), np.array(balanced_y)
+
+
 def prepare_training_data():
     """
     Load all data files and prepare training datasets.
@@ -195,9 +254,17 @@ def prepare_training_data():
     X = np.array(all_chunks)
     y = np.array(all_labels)
     
-    print(f"\nDataset summary:")
+    print(f"\nDataset summary (before balancing):")
     print(f"  Total chunks: {len(X)}")
     print(f"  Chunk shape: {X[0].shape}")
+    emotion_counts = pd.Series(y).value_counts().to_dict()
+    print(f"  Emotion distribution: {emotion_counts}")
+    
+    # Apply class balancing - cap at 1.5x the minimum class size
+    X, y = balance_classes(X, y, emotion_counts)
+    
+    print(f"\nDataset summary (after balancing):")
+    print(f"  Total chunks: {len(X)}")
     print(f"  Emotion distribution: {pd.Series(y).value_counts().to_dict()}")
     
     # Use hardcoded labels from settings
@@ -235,7 +302,7 @@ def train_model(model, X_train, y_train):
     
     # Apply masking to training data (20% of each input set to 0)
     print("Applying masking to training data (20% of values set to 0)...")
-    X_train_masked = apply_masking(X_train, mask_ratio=0.2)
+    X_train_masked = apply_masking(X_train, mask_ratio=0.1)
     
     # Define callbacks
     callbacks = [
@@ -284,7 +351,21 @@ def evaluate_model(model, X_test, y_test, label_encoder):
     # Classification report
     class_names = label_encoder.classes_
     print("\nClassification Report:")
-    print(classification_report(y_test, y_pred_classes, target_names=class_names))
+    
+    # Get unique classes in test set to handle cases where not all classes are present
+    unique_test_classes = np.unique(y_test)
+    unique_pred_classes = np.unique(y_pred_classes)
+    present_classes = np.union1d(unique_test_classes, unique_pred_classes)
+    
+    # Use only classes that are present in test data for the report
+    present_class_names = [class_names[i] for i in present_classes]
+    
+    print(f"Classes in test set: {[class_names[i] for i in unique_test_classes]}")
+    print(f"Total classes in encoder: {list(class_names)}")
+    
+    print(classification_report(y_test, y_pred_classes, 
+                              target_names=present_class_names,
+                              labels=present_classes))
     
     # Confusion matrix
     print("\nConfusion Matrix:")
