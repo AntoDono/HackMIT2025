@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_193821",
+  "total_samples": 296,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "\\Youwei Zhen",
+    "target_emotion": "stress"
+  }
+}

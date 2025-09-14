@@ -32,7 +32,7 @@
       <!-- Current Emotion and Data Row -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <!-- Current Emotion Display -->
-        <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6">
+        <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6 flex items-center justify-center">
           <div class="text-center">
             <div class="relative mb-4">
               <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center border-4 border-purple-500/30">
@@ -76,8 +76,8 @@
           Live Brainwave Patterns
         </h2>
         
-        <!-- Wave Visualizations - 2x2 Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Wave Visualizations - 2x3 Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           <!-- Beta Waves -->
           <div class="bg-black/20 rounded-lg p-4">
             <h4 class="text-sm font-medium text-purple-300 mb-2">Beta Waves (Focus & Activity)</h4>
@@ -90,6 +90,13 @@
             <h4 class="text-sm font-medium text-blue-300 mb-2">Alpha Waves (Relaxation & Awareness)</h4>
             <div class="text-xs text-gray-400 mb-2">Low Alpha (Cyan) • High Alpha (Green)</div>
             <canvas ref="alphaCanvas" class="w-full h-32"></canvas>
+          </div>
+          
+          <!-- Gamma Waves -->
+          <div class="bg-black/20 rounded-lg p-4">
+            <h4 class="text-sm font-medium text-pink-300 mb-2">Gamma Waves (High Cognition)</h4>
+            <div class="text-xs text-gray-400 mb-2">Low Gamma (Magenta) • Mid Gamma (Hot Pink)</div>
+            <canvas ref="gammaCanvas" class="w-full h-32"></canvas>
           </div>
           
           <!-- Delta & Theta Waves -->
@@ -157,10 +164,12 @@ const brainwaveDataPoints = ref([])
 let eventSource = null
 let betaCanvas = ref(null)
 let alphaCanvas = ref(null) 
+let gammaCanvas = ref(null)
 let deltaThetaCanvas = ref(null)
 let mentalCanvas = ref(null)
 let betaContext = null
 let alphaContext = null
+let gammaContext = null
 let deltaThetaContext = null
 let mentalContext = null
 
@@ -194,6 +203,8 @@ function getDisplayName(key) {
     'highAlpha': 'High Alpha', 
     'lowBeta': 'Low Beta',
     'highBeta': 'High Beta',
+    'lowGamma': 'Low Gamma',
+    'midGamma': 'Mid Gamma',
     'delta': 'Delta',
     'theta': 'Theta',
     'attention': 'Attention',
@@ -217,6 +228,8 @@ function getDisplayValue(key, value) {
     case 'highAlpha':
     case 'lowBeta':
     case 'highBeta':
+    case 'lowGamma':
+    case 'midGamma':
       // Display microvolts squared with proper Greek mu symbol
       if (value >= 1000000) {
         return `${(value / 1000000).toFixed(1)}M μV²`
@@ -252,6 +265,11 @@ function getProgressWidth(key, value) {
     case 'highBeta':
       // These are medium-high values
       return Math.min((value / 50000) * 100, 100)
+      
+    case 'lowGamma':
+    case 'midGamma':
+      // Gamma waves are typically lower values
+      return Math.min((value / 20000) * 100, 100)
       
     default:
       return Math.min(value / 100, 100)
@@ -344,6 +362,13 @@ function initCanvas() {
     alphaCanvas.value.height = alphaCanvas.value.offsetHeight
   }
   
+  // Initialize Gamma canvas
+  if (gammaCanvas.value) {
+    gammaContext = gammaCanvas.value.getContext('2d')
+    gammaCanvas.value.width = gammaCanvas.value.offsetWidth
+    gammaCanvas.value.height = gammaCanvas.value.offsetHeight
+  }
+  
   // Initialize Delta/Theta canvas
   if (deltaThetaCanvas.value) {
     deltaThetaContext = deltaThetaCanvas.value.getContext('2d')
@@ -413,6 +438,38 @@ function updateWaveVisualization() {
         const value = dataPoint[key] || 0
         // Normalize alpha values
         const normalizedValue = Math.min(value / 50000, 1) // Scale for typical alpha range
+        const y = canvas.height - (normalizedValue * canvas.height)
+        
+        if (index === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
+        }
+      })
+      
+      ctx.stroke()
+    })
+  }
+  
+  // Update Gamma Waves (lowGamma, midGamma)
+  if (gammaContext) {
+    const canvas = gammaCanvas.value
+    const ctx = gammaContext
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    const gammaKeys = ['lowGamma', 'midGamma']
+    const gammaColors = ['#ec4899', '#be185d'] // Hot Pink, Dark Pink
+    
+    gammaKeys.forEach((key, keyIndex) => {
+      ctx.beginPath()
+      ctx.strokeStyle = gammaColors[keyIndex]
+      ctx.lineWidth = 2
+      
+      brainwaveDataPoints.value.forEach((dataPoint, index) => {
+        const x = (index / brainwaveDataPoints.value.length) * canvas.width
+        const value = dataPoint[key] || 0
+        // Normalize gamma values (typically lower than other bands)
+        const normalizedValue = Math.min(value / 20000, 1) // Scale for typical gamma range
         const y = canvas.height - (normalizedValue * canvas.height)
         
         if (index === 0) {

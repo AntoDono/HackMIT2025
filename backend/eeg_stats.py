@@ -22,7 +22,7 @@ FREQUENCY_BANDS = {
 # Expected brainwave columns
 BRAINWAVE_COLUMNS = [
     "attention", "meditation", "delta", "theta", 
-    "lowAlpha", "highAlpha", "lowBeta", "highBeta"
+    "lowAlpha", "highAlpha", "lowBeta", "highBeta", "lowGamma", "midGamma"
 ]
 
 def calculate_basic_stats(df: pd.DataFrame) -> Dict[str, Any]:

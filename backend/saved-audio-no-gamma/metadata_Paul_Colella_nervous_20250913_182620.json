@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_182620",
+  "total_samples": 109,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Paul Colella",
+    "target_emotion": "nervous"
+  }
+}

@@ -19,7 +19,7 @@ ENCODER_SAVE_PATH = '../models/label_encoder.joblib'
 # Brainwave feature columns
 FEATURE_COLUMNS = [
     'attention', 'meditation', 'delta', 'theta', 
-    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta'
+    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta', 'lowGamma', 'midGamma'
 ]
 
 # Hardcoded emotion labels

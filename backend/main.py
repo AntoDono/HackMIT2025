@@ -13,11 +13,11 @@ import pandas as pd
 import numpy as np
 
 from dotenv import load_dotenv
+from cerebras_client import CerebrasClient
 
 load_dotenv()
 
 SUNO_API_KEY = os.getenv('SUNO_API_KEY')
-CEREBRAS_API_KEY = os.getenv('CEREBRAS_API_KEY')
 
 # Import ML inference
 try:
@@ -46,7 +46,7 @@ except ImportError:
 # Constants & schema
 BRAINWAVE_COLUMNS = [
     "attention", "meditation", "delta", "theta", 
-    "lowAlpha", "highAlpha", "lowBeta", "highBeta"
+    "lowAlpha", "highAlpha", "lowBeta", "highBeta", "lowGamma", "midGamma"
 ]
 MODEL_PATH = "models/latest.joblib"
 
@@ -55,17 +55,28 @@ Path("models").mkdir(exist_ok=True)
 Path("data").mkdir(exist_ok=True)
 Path("saved-audio").mkdir(exist_ok=True)
 
+cerebras_client = CerebrasClient()
 # Simple validation function (replacing Pydantic)
 def validate_brainwave_sample(data: Dict) -> Dict[str, float]:
     """Validate and convert brainwave sample data"""
     result = {}
-    for col in BRAINWAVE_COLUMNS:
+    
+    # Core required columns (original 8)
+    core_columns = [
+        "attention", "meditation", "delta", "theta", 
+        "lowAlpha", "highAlpha", "lowBeta", "highBeta",
+        "lowGamma", "midGamma"
+    ]
+    
+    # Validate core columns
+    for col in core_columns:
         if col not in data:
             raise ValueError(f"Missing required field: {col}")
         try:
             result[col] = float(data[col])
         except (ValueError, TypeError):
             raise ValueError(f"Invalid value for {col}: {data[col]}")
+    
     return result
 
 # In-memory store
@@ -81,6 +92,9 @@ user_session = {
     "full_name": None,
     "target_emotion": None
 }
+
+# Global save mode flag
+is_save = False
 
 # Simple WebSocket data storage
 websocket_clients = []
@@ -98,11 +112,14 @@ def add_row(sample_dict: Dict[str, float]) -> int:
         new_size = len(brainwave_data)
         
         # Perform emotion inference every 10 data points (and only if we have enough data)
-        if new_size > 5 and new_size % 10 == 0 and infer_emotion is not None:
+        # Skip emotion inference and song description in save mode
+        if not is_save and new_size > 5 and new_size % 15 == 0 and infer_emotion is not None:
             try:
                 predicted_emotion = infer_emotion(brainwave_data.copy())
                 print(f"🧠 Emotion Inference: {predicted_emotion} (based on {new_size} samples)")
-                
+                song_description = cerebras_client.generate_song_description(predicted_emotion, brainwave_data.copy())
+                print(f"🎵 Song Description: {song_description}")
+
                 # Add to emotion history
                 import datetime
                 emotion_entry = {
@@ -592,6 +609,8 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
 
 def main():
     """Main function with argument parsing"""
+    global is_save
+    
     parser = argparse.ArgumentParser(description="EEG Socket Server")
     parser.add_argument("--save", action="store_true", 
                        help="Enable save mode - type 'stop' to save data and exit")
@@ -602,9 +621,12 @@ def main():
     
     args = parser.parse_args()
     
+    # Set global save mode flag
+    is_save = args.save
+    
     print("Starting EEG Socket Server...")
     if args.save:
-        print("Save mode enabled.")
+        print("Save mode enabled - emotion inference and song description will be skipped.")
     
     start_socket_server(host=args.host, port=args.port, save_mode=args.save)
 

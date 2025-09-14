@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_180442",
+  "total_samples": 32,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Kevin Taylor",
+    "target_emotion": "surprise"
+  }
+}
