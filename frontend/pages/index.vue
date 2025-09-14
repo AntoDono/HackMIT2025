@@ -20,9 +20,57 @@
           Revolutionary Real-time Brainwave Emotion Detection & Therapeutic Music Generation
         </p>
         
-        <p class="text-lg text-slate-600 mb-20 max-w-2xl mx-auto">
+        <p class="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
           Monitor your mental state with advanced AI-powered analysis, get instant emotional insights, and receive personalized therapeutic music recommendations to optimize your wellbeing.
         </p>
+        
+        <!-- Mental Health Applications -->
+        <div class="bg-white/50 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-8 mb-20 max-w-4xl mx-auto">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-4">Clinical Mental Health Support</h3>
+          </div>
+          
+          <p class="text-lg text-slate-700 leading-relaxed text-center max-w-3xl mx-auto">
+            Our advanced brainwave analysis system can help <strong>counteract and manage symptoms</strong> of various mental health conditions including <strong>schizophrenic episodes</strong>, <strong>bipolar disorders</strong>, anxiety, depression, and ADHD. By detecting early warning signs through real-time EEG monitoring, the system provides immediate therapeutic music interventions designed to stabilize mood, reduce agitation, and promote emotional regulation before symptoms escalate.
+          </p>
+          
+          <div class="grid md:grid-cols-3 gap-6 mt-8">
+            <div class="text-center">
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-slate-800 mb-2">Early Detection</h4>
+              <p class="text-slate-600 text-sm">Identify mood changes and episode onset before they fully manifest</p>
+            </div>
+            
+            <div class="text-center">
+              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v6.114A4.369 4.369 0 005 11a4 4 0 104 4V5.114l8-1.6V9.114A4.369 4.369 0 0016 9a4 4 0 104 4V3z"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-slate-800 mb-2">Therapeutic Intervention</h4>
+              <p class="text-slate-600 text-sm">Immediate personalized music therapy to stabilize emotional states</p>
+            </div>
+            
+            <div class="text-center">
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <h4 class="font-semibold text-slate-800 mb-2">Symptom Management</h4>
+              <p class="text-slate-600 text-sm">Continuous monitoring and support for long-term mental health stability</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
