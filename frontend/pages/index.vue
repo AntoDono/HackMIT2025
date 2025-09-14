@@ -20,24 +20,9 @@
           Revolutionary Real-time Brainwave Emotion Detection & Therapeutic Music Generation
         </p>
         
-        <p class="text-lg text-slate-600 mb-12 max-w-2xl mx-auto">
+        <p class="text-lg text-slate-600 mb-20 max-w-2xl mx-auto">
           Monitor your mental state with advanced AI-powered analysis, get instant emotional insights, and receive personalized therapeutic music recommendations to optimize your wellbeing.
         </p>
-        
-        <!-- CTA Button -->
-        <div class="mb-20">
-          <NuxtLink to="/dashboard" 
-                    class="inline-flex items-center px-10 py-5 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-semibold text-lg rounded-2xl hover:from-blue-600 hover:to-sky-600 transition-all duration-300 transform hover:scale-105 shadow-xl border border-purple-200 hover:border-purple-300">
-            <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 2L3 7v11a1 1 0 001 1h3v-5h6v5h3a1 1 0 001-1V7l-7-5z"/>
-            </svg>
-            Launch Dashboard
-          </NuxtLink>
-          
-          <div class="text-slate-600 text-sm mt-4">
-            Make sure your EEG device is connected and the backend server is running
-          </div>
-        </div>
       </div>
     </div>
 
@@ -54,16 +39,23 @@
         <!-- User with EEG Device Photo -->
         <div class="grid lg:grid-cols-2 gap-16 items-center mb-20">
           <div class="order-2 lg:order-1">
-            <div class="bg-white/60 backdrop-blur-sm rounded-3xl border border-blue-200 shadow-lg p-2">
-              <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl h-96 flex items-center justify-center">
-                <div class="text-center">
-                  <svg class="w-24 h-24 text-slate-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
-                  </svg>
-                  <p class="text-slate-500 font-medium">User with EEG Device</p>
-                  <p class="text-slate-400 text-sm">Photo placeholder</p>
-                </div>
-              </div>
+            <div class="bg-white/60 backdrop-blur-sm rounded-3xl border border-blue-200 shadow-lg p-2 mb-8">
+              <img src="/assets/images/jennifer.JPG" 
+                   alt="User with EEG Device" 
+                   class="w-full h-96 object-cover rounded-2xl"/>
+            </div>
+            
+            <!-- Try It Out Button -->
+            <div class="text-center">
+              <NuxtLink to="/dashboard" 
+                        class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-lg rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                  <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                </svg>
+                Try It Out
+              </NuxtLink>
+              <p class="text-slate-500 text-sm mt-3">Experience real-time brainwave analysis</p>
             </div>
           </div>
           
@@ -170,32 +162,20 @@
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <!-- Dashboard Screenshot -->
           <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4">
-            <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl h-64 flex items-center justify-center">
-              <div class="text-center">
-                <svg class="w-16 h-16 text-slate-400 mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                </svg>
-                <p class="text-slate-500 font-medium">Main Dashboard</p>
-                <p class="text-slate-400 text-sm">Screenshot placeholder</p>
-              </div>
-            </div>
+            <img src="/assets/images/dashboard.png" 
+                 alt="Real-time Dashboard Screenshot" 
+                 class="w-full h-64 object-cover rounded-xl"/>
             <div class="p-4">
-              <h4 class="font-semibold text-slate-800 mb-2">Real-time Dashboard</h4>
+              <h4 class="font-semibold text-slate-800 mb-2">Real-time Dashboard and Detailed Analysis</h4>
               <p class="text-slate-600 text-sm">Live emotion detection, brainwave visualization, and therapeutic recommendations</p>
             </div>
           </div>
 
           <!-- Brainwave Charts Screenshot -->
           <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4">
-            <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl h-64 flex items-center justify-center">
-              <div class="text-center">
-                <svg class="w-16 h-16 text-slate-400 mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
-                <p class="text-slate-500 font-medium">Brainwave Charts</p>
-                <p class="text-slate-400 text-sm">Screenshot placeholder</p>
-              </div>
-            </div>
+            <img src="/assets/images/waves.png" 
+                 alt="Live Brainwave Charts Screenshot" 
+                 class="w-full h-64 object-cover rounded-xl"/>
             <div class="p-4">
               <h4 class="font-semibold text-slate-800 mb-2">Live Wave Analysis</h4>
               <p class="text-slate-600 text-sm">Interactive charts showing Alpha, Beta, Theta, Delta, and Gamma wave patterns</p>

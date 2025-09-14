@@ -3,3 +3,4 @@ suno/output
 .DS_Store
 node_modules
 .env
+generated-music
