@@ -896,26 +896,58 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
             return
     
     def input_handler():
-        """Handle user input in save mode"""
+        """Handle user input for commands"""
         if save_mode:
-            print("Type 'stop' to save data and exit...")
-            while server_running.is_set():
-                try:
-                    user_input = input().strip().lower()
-                    if user_input == 'stop':
-                        print("Stopping server and saving data...")
-                        save_all_data()
-                        server_running.clear()
-                        break
-                except EOFError:
-                    # Handle Ctrl+C or EOF
+            print("Type 'stop' to save data and exit, or 'clear' to reset data...")
+        else:
+            print("Type 'clear' to reset data, or Ctrl+C to exit...")
+        
+        while server_running.is_set():
+            try:
+                user_input = input().strip().lower()
+                if user_input == 'stop' and save_mode:
+                    print("Stopping server and saving data...")
+                    save_all_data()
+                    server_running.clear()
                     break
+                elif user_input == 'clear':
+                    print("Clearing brainwave data...")
+                    reset()
+                    # Clear related state
+                    global emotion_history, generated_music_files, current_emotion_analysis, current_status, song_reasoning
+                    emotion_history.clear()
+                    generated_music_files.clear()
+                    current_emotion_analysis = "Analyzing brainwave patterns..."
+                    current_status = "unknown"
+                    song_reasoning = "No music recommendation yet"
+                    # Stop any currently playing audio
+                    stop_current_audio()
+                    
+                    # Broadcast reset to connected clients
+                    reset_broadcast = {
+                        "type": "data_reset",
+                        "message": "Brainwave data has been cleared",
+                        "sample_count": 0,
+                        "timestamp": time.time()
+                    }
+                    data_queue.put(json.dumps(reset_broadcast))
+                    
+                    print(f"✅ Data cleared! Ready to collect new brainwave data.")
+                elif user_input == 'help':
+                    if save_mode:
+                        print("Available commands: 'stop' (save and exit), 'clear' (reset data), 'help' (show this message)")
+                    else:
+                        print("Available commands: 'clear' (reset data), 'help' (show this message)")
+                elif user_input and user_input not in ['stop', 'clear', 'help']:
+                    print(f"Unknown command: '{user_input}'. Type 'help' for available commands.")
+            except EOFError:
+                # Handle Ctrl+C or EOF
+                break
     
-    # Start input handler thread if in save mode
-    if save_mode:
-        input_thread = threading.Thread(target=input_handler)
-        input_thread.daemon = True
-        input_thread.start()
+    # Start input handler thread for user commands
+    input_thread = threading.Thread(target=input_handler)
+    input_thread.daemon = True
+    input_thread.start()
     
     try:
         server_socket.bind((host, port))

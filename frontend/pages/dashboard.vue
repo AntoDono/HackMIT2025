@@ -4,13 +4,13 @@
     <div class="bg-white/40 backdrop-blur-sm border-b border-blue-200 shadow-sm">
       <div class="container mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+          <div class="flex items-center space-x-2 sm:space-x-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+              <img src="/assets/images/logo_transparent.png" 
+                   alt="tempoRoll Logo" 
+                   class="w-10 h-10 sm:w-12 sm:h-12 object-contain hover:scale-110 transition-transform duration-200"/>
             </div>
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-transparent">
+            <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-transparent">
               tempoRoll
             </h1>
           </div>

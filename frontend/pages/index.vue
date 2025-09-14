@@ -4,13 +4,13 @@
     <div class="container mx-auto px-6 py-16">
       <div class="text-center">
         <!-- Logo and Title -->
-        <div class="flex items-center justify-center space-x-4 mb-8">
-          <div class="w-20 h-20 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
+        <div class="flex flex-col sm:flex-row items-center justify-center sm:space-x-3 space-y-3 sm:space-y-0 mb-8">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 flex items-center justify-center">
+            <img src="/assets/images/logo_transparent.png" 
+                 alt="tempoRoll Logo" 
+                 class="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300"/>
           </div>
-          <h1 class="text-7xl font-bold bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-transparent">
+          <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-transparent text-center">
             tempoRoll
           </h1>
         </div>
