@@ -1,16 +1,16 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-sky-100 to-blue-100">
     <!-- Header -->
-    <div class="bg-black/20 backdrop-blur-sm border-b border-purple-500/20">
+    <div class="bg-white/40 backdrop-blur-sm border-b border-blue-200 shadow-sm">
       <div class="container mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <div class="w-8 h-8 bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </div>
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-sky-500 bg-clip-text text-transparent">
               tempoRoll
             </h1>
           </div>
@@ -18,9 +18,9 @@
             <div class="flex items-center space-x-2">
               <div :class="connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'" 
                    class="w-2 h-2 rounded-full animate-pulse"></div>
-              <span class="text-gray-300 text-sm">{{ connectionStatus }}</span>
+              <span class="text-slate-600 text-sm">{{ connectionStatus }}</span>
             </div>
-            <div class="text-gray-300 text-sm">
+            <div class="text-slate-600 text-sm">
               Samples: {{ sampleCount }}
             </div>
           </div>
@@ -32,28 +32,28 @@
       <!-- Current Emotion and Data Row -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <!-- Current Emotion Display -->
-        <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6">
+        <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6">
           <div class="text-center mb-4">
             <div class="relative mb-4">
-              <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center border-4 border-purple-500/30">
+              <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-blue-100 to-sky-100 flex items-center justify-center border-4 border-purple-200">
                 <span class="text-2xl">{{ getEmotionEmoji(currentEmotion) }}</span>
               </div>
-              <div class="absolute -inset-1 rounded-full border-2 border-purple-500/20 animate-pulse"></div>
+              <div class="absolute -inset-1 rounded-full border-2 border-purple-300 animate-pulse"></div>
             </div>
             
-            <h3 class="text-lg font-bold text-white mb-1 capitalize">
+            <h3 class="text-lg font-bold text-slate-800 mb-1 capitalize">
               {{ currentEmotion || 'Detecting...' }}
             </h3>
             
-            <div class="text-gray-400 text-xs mb-2">
+            <div class="text-slate-500 text-xs mb-2">
               {{ lastUpdateTime }}
             </div>
           </div>
           
           <!-- Real-time Emotion Analysis -->
-          <div class="border-t border-gray-700/50 pt-3">
-            <div class="text-xs text-gray-400 mb-1">Current Analysis:</div>
-            <div class="text-sm text-gray-300 leading-relaxed">
+          <div class="border-t border-slate-200 pt-3">
+            <div class="text-xs text-slate-500 mb-1">Current Analysis:</div>
+            <div class="text-sm text-slate-700 leading-relaxed">
               {{ currentEmotionAnalysis || 'Analyzing brainwave patterns...' }}
             </div>
           </div>
@@ -63,11 +63,11 @@
         <div class="lg:col-span-3">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div v-for="(value, key) in currentBrainwaveData" :key="key" 
-                 class="bg-black/30 backdrop-blur-sm rounded-xl border border-purple-500/20 p-4">
-              <div class="text-gray-400 text-xs uppercase tracking-wider mb-1">{{ getDisplayName(key) }}</div>
-              <div class="text-white text-lg font-mono mb-2">{{ getDisplayValue(key, value) }}</div>
-              <div class="w-full bg-gray-700 rounded-full h-2">
-                <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+                 class="bg-white/60 backdrop-blur-sm rounded-xl border border-blue-200 shadow-lg p-4">
+              <div class="text-slate-500 text-xs uppercase tracking-wider mb-1">{{ getDisplayName(key) }}</div>
+              <div class="text-slate-800 text-lg font-mono mb-2">{{ getDisplayValue(key, value) }}</div>
+              <div class="w-full bg-slate-200 rounded-full h-2">
+                <div class="bg-gradient-to-r from-blue-500 to-sky-400 h-2 rounded-full transition-all duration-300"
                      :style="{ width: getProgressWidth(key, value) + '%' }"></div>
               </div>
             </div>
@@ -76,9 +76,9 @@
       </div>
 
       <!-- Wave Visualizations Full Width Row -->
-      <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6">
-        <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
-          <svg class="w-6 h-6 mr-2 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+      <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
           Live Brainwave Patterns
@@ -87,46 +87,46 @@
         <!-- Wave Visualizations - 2x3 Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           <!-- Beta Waves -->
-          <div class="bg-black/20 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-purple-300 mb-2">Beta Waves (Focus & Activity)</h4>
-            <div class="text-xs text-gray-400 mb-2">Low Beta (Purple) • High Beta (Pink)</div>
+          <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+            <h4 class="text-sm font-medium text-purple-600 mb-2">Beta Waves (Focus & Activity)</h4>
+            <div class="text-xs text-slate-500 mb-2">Low Beta (Purple) • High Beta (Pink)</div>
             <canvas ref="betaCanvas" class="w-full h-32"></canvas>
           </div>
           
           <!-- Alpha Waves -->
-          <div class="bg-black/20 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-blue-300 mb-2">Alpha Waves (Relaxation & Awareness)</h4>
-            <div class="text-xs text-gray-400 mb-2">Low Alpha (Cyan) • High Alpha (Green)</div>
+          <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+            <h4 class="text-sm font-medium text-blue-600 mb-2">Alpha Waves (Relaxation & Awareness)</h4>
+            <div class="text-xs text-slate-500 mb-2">Low Alpha (Cyan) • High Alpha (Green)</div>
             <canvas ref="alphaCanvas" class="w-full h-32"></canvas>
           </div>
           
           <!-- Gamma Waves -->
-          <div class="bg-black/20 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-pink-300 mb-2">Gamma Waves (High Cognition)</h4>
-            <div class="text-xs text-gray-400 mb-2">Low Gamma (Magenta) • Mid Gamma (Hot Pink)</div>
+          <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+            <h4 class="text-sm font-medium text-pink-600 mb-2">Gamma Waves (High Cognition)</h4>
+            <div class="text-xs text-slate-500 mb-2">Low Gamma (Magenta) • Mid Gamma (Hot Pink)</div>
             <canvas ref="gammaCanvas" class="w-full h-32"></canvas>
           </div>
           
           <!-- Delta & Theta Waves -->
-          <div class="bg-black/20 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-amber-300 mb-2">Deep Brain Waves</h4>
-            <div class="text-xs text-gray-400 mb-2">Delta (Amber) • Theta (Red)</div>
+          <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+            <h4 class="text-sm font-medium text-amber-600 mb-2">Deep Brain Waves</h4>
+            <div class="text-xs text-slate-500 mb-2">Delta (Amber) • Theta (Red)</div>
             <canvas ref="deltaThetaCanvas" class="w-full h-32"></canvas>
           </div>
           
           <!-- Mental States -->
-          <div class="bg-black/20 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-indigo-300 mb-2">Mental States</h4>
-            <div class="text-xs text-gray-400 mb-2">Attention (Indigo) • Meditation (Lime)</div>
+          <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+            <h4 class="text-sm font-medium text-indigo-600 mb-2">Mental States</h4>
+            <div class="text-xs text-slate-500 mb-2">Attention (Indigo) • Meditation (Lime)</div>
             <canvas ref="mentalCanvas" class="w-full h-32"></canvas>
           </div>
         </div>
       </div>
 
       <!-- Emotion History -->
-      <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6 mt-8">
-        <h2 class="text-xl font-semibold text-white mb-6 flex items-center">
-          <svg class="w-6 h-6 mr-2 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+      <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6 mt-8">
+        <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
             <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
           </svg>
           Emotion Timeline
@@ -134,20 +134,20 @@
         
         <div class="space-y-3 max-h-64 overflow-y-auto">
           <div v-for="(emotion, index) in emotionHistory" :key="index"
-               class="flex items-center justify-between bg-black/20 rounded-lg p-4 border border-gray-700/50">
+               class="flex items-center justify-between bg-white/40 rounded-lg p-4 border border-blue-100">
             <div class="flex items-center space-x-3">
               <span class="text-2xl">{{ getEmotionEmoji(emotion.emotion) }}</span>
               <div>
-                <div class="text-white font-medium capitalize">{{ emotion.emotion }}</div>
-                <div class="text-gray-400 text-sm">{{ formatTime(emotion.timestamp) }}</div>
+                <div class="text-slate-800 font-medium capitalize">{{ emotion.emotion }}</div>
+                <div class="text-slate-500 text-sm">{{ formatTime(emotion.timestamp) }}</div>
               </div>
             </div>
-            <div class="text-gray-400 text-sm">
+            <div class="text-slate-500 text-sm">
               {{ emotion.sample_count }} samples
             </div>
           </div>
           
-          <div v-if="emotionHistory.length === 0" class="text-center text-gray-500 py-8">
+          <div v-if="emotionHistory.length === 0" class="text-center text-slate-500 py-8">
             No emotions detected yet. Start sending brainwave data!
           </div>
         </div>
@@ -584,16 +584,16 @@ onUnmounted(() => {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(148, 163, 184, 0.2);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.5);
+  background: rgba(59, 130, 246, 0.5);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.7);
+  background: rgba(59, 130, 246, 0.7);
 }
 </style>

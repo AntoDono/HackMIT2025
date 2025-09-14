@@ -326,7 +326,7 @@ def add_row(sample_dict: Dict[str, float]) -> int:
         
         # Perform emotion inference every 10 data points (and only if we have enough data)
         # Skip emotion inference and song description in save mode
-        if not is_save and new_size > 5 and new_size % 2 == 0 and infer_emotion is not None:
+        if not is_save and new_size > 5 and new_size % 5 == 0 and infer_emotion is not None:
             try:
                 predicted_emotion = infer_emotion(brainwave_data.copy())
                 print(f"🧠 Emotion Inference: {predicted_emotion} (based on {new_size} samples)")
