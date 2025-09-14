@@ -277,16 +277,10 @@
           <!-- Third Screenshot - Left -->
           <div class="grid lg:grid-cols-2 gap-12 items-center">
             <div class="order-1 lg:order-1">
-              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl">
-                <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl h-80 flex items-center justify-center transition-all duration-300 hover:from-blue-50 hover:to-sky-50">
-                  <div class="text-center transform hover:scale-110 transition-transform duration-300">
-                    <svg class="w-20 h-20 text-slate-400 mx-auto mb-4 animate-spin" style="animation-duration: 3s" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"/>
-                    </svg>
-                    <p class="text-slate-500 font-medium text-lg">Comprehensive Analysis</p>
-                    <p class="text-slate-400">Coming Soon</p>
-                  </div>
-                </div>
+              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl animate-pulse hover:animate-none">
+                <img src="/assets/images/detailed_analysis.png" 
+                     alt="Detailed Analysis Screenshot" 
+                     class="w-full h-80 object-cover rounded-xl transition-transform duration-300 hover:scale-105"/>
               </div>
             </div>
             <div class="order-2 lg:order-2">

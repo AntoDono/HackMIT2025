@@ -4,3 +4,4 @@ suno/output
 node_modules
 .env
 generated-music
+models
