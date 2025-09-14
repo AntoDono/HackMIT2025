@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_175256",
+  "total_samples": 132,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Fahmi Omer",
+    "target_emotion": "focused"
+  }
+}

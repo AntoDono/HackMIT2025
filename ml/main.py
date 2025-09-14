@@ -23,21 +23,27 @@ class BrainwaveModel:
         self.label_encoder = LabelEncoder()
         self.is_trained = False
         
-    def _build_model(self, num_classes):
-        """Build a simple neural network model."""
+    def _build_model(self, num_classes, hidden_units=None, dropout_rate=0.3, learning_rate=0.001):
+        """Build a neural network model with configurable parameters."""
+        if hidden_units is None:
+            hidden_units = [128, 64, 32]
+        
         model = keras.Sequential([
             keras.layers.Input(shape=(self.num_points, self.num_waves)),
             keras.layers.Flatten(),
-            keras.layers.Dense(128, activation='relu'),
-            keras.layers.Dropout(0.3),
-            keras.layers.Dense(64, activation='relu'),
-            keras.layers.Dropout(0.3),
-            keras.layers.Dense(32, activation='relu'),
-            keras.layers.Dense(num_classes, activation='softmax')
         ])
         
+        # Add configurable hidden layers
+        for units in hidden_units:
+            model.add(keras.layers.Dense(units, activation='relu'))
+            model.add(keras.layers.Dropout(dropout_rate))
+        
+        # Output layer
+        model.add(keras.layers.Dense(num_classes, activation='softmax'))
+        
+        # Compile with configurable optimizer
         model.compile(
-            optimizer='adam',
+            optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
@@ -70,17 +76,32 @@ class BrainwaveModel:
             
         return np.array(chunks)
     
-    def train(self, df, labels, epochs=50, validation_split=0.2):
+    def train(self, df, labels, epochs=50, validation_split=0.2, batch_size=32, 
+              hidden_units=None, dropout_rate=0.3, learning_rate=0.001, 
+              early_stopping_patience=10, reduce_lr_patience=5):
         """
-        Train the model on brain wave data.
+        Train the model on brain wave data with configurable hyperparameters.
         
         Args:
             df (pd.DataFrame): DataFrame containing wave data with columns matching wave_types
             labels (list): List of emotion labels (e.g., ['happy', 'sad', 'depressed'])
             epochs (int): Number of training epochs
             validation_split (float): Fraction of data to use for validation
+            batch_size (int): Training batch size
+            hidden_units (list): List of hidden layer sizes (e.g., [128, 64, 32])
+            dropout_rate (float): Dropout rate for regularization
+            learning_rate (float): Learning rate for Adam optimizer
+            early_stopping_patience (int): Patience for early stopping callback
+            reduce_lr_patience (int): Patience for learning rate reduction callback
         """
         print(f"Training model with {len(df)} samples...")
+        print(f"Hyperparameters:")
+        print(f"  Epochs: {epochs}")
+        print(f"  Batch size: {batch_size}")
+        print(f"  Learning rate: {learning_rate}")
+        print(f"  Dropout rate: {dropout_rate}")
+        print(f"  Hidden units: {hidden_units or [128, 64, 32]}")
+        print(f"  Validation split: {validation_split}")
         
         # Create chunks from the data
         X = self._create_chunks(df)
@@ -97,13 +118,39 @@ class BrainwaveModel:
         # Encode labels
         y = self.label_encoder.fit_transform(labels[:len(X)])
         
-        # Build model
+        # Build model with custom hyperparameters
         num_classes = len(self.label_encoder.classes_)
-        self.model = self._build_model(num_classes)
+        self.model = self._build_model(
+            num_classes=num_classes,
+            hidden_units=hidden_units,
+            dropout_rate=dropout_rate,
+            learning_rate=learning_rate
+        )
         
         print(f"Model input shape: {X.shape}")
         print(f"Number of classes: {num_classes}")
         print(f"Classes: {list(self.label_encoder.classes_)}")
+        print(f"Model parameters: {self.model.count_params():,}")
+        
+        # Setup callbacks
+        callbacks = []
+        
+        if early_stopping_patience > 0:
+            callbacks.append(keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=early_stopping_patience,
+                restore_best_weights=True,
+                verbose=1
+            ))
+        
+        if reduce_lr_patience > 0:
+            callbacks.append(keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=reduce_lr_patience,
+                min_lr=1e-6,
+                verbose=1
+            ))
         
         # Train the model
         history = self.model.fit(
@@ -111,7 +158,8 @@ class BrainwaveModel:
             epochs=epochs,
             validation_split=validation_split,
             verbose=1,
-            batch_size=32
+            batch_size=batch_size,
+            callbacks=callbacks if callbacks else None
         )
         
         self.is_trained = True

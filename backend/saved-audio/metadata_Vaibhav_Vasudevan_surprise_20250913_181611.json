@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_181611",
+  "total_samples": 44,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "Vaibhav Vasudevan",
+    "target_emotion": "surprise"
+  }
+}

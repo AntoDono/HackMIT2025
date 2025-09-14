@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_174526",
+  "total_samples": 126,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "henry wang",
+    "target_emotion": "focused"
+  }
+}

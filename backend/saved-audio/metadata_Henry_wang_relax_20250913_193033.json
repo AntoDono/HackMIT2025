@@ -1,0 +1,19 @@
+{
+  "timestamp": "20250913_193033",
+  "total_samples": 90,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "victor desouza",
+    "target_emotion": "relax"
+  }
+}
