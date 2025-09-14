@@ -158,44 +158,110 @@
           </p>
         </div>
 
-        <!-- App Screenshots Grid -->
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <!-- Dashboard Screenshot -->
-          <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4">
-            <img src="/assets/images/dashboard.png" 
-                 alt="Real-time Dashboard Screenshot" 
-                 class="w-full h-64 object-cover rounded-xl"/>
-            <div class="p-4">
-              <h4 class="font-semibold text-slate-800 mb-2">Real-time Dashboard and Detailed Analysis</h4>
-              <p class="text-slate-600 text-sm">Live emotion detection, brainwave visualization, and therapeutic recommendations</p>
-            </div>
-          </div>
-
-          <!-- Brainwave Charts Screenshot -->
-          <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4">
-            <img src="/assets/images/waves.png" 
-                 alt="Live Brainwave Charts Screenshot" 
-                 class="w-full h-64 object-cover rounded-xl"/>
-            <div class="p-4">
-              <h4 class="font-semibold text-slate-800 mb-2">Live Wave Analysis</h4>
-              <p class="text-slate-600 text-sm">Interactive charts showing Alpha, Beta, Theta, Delta, and Gamma wave patterns</p>
-            </div>
-          </div>
-
-          <!-- Mobile View Screenshot -->
-          <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 md:col-span-2 lg:col-span-1">
-            <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl h-64 flex items-center justify-center">
-              <div class="text-center">
-                <svg class="w-16 h-16 text-slate-400 mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"/>
-                </svg>
-                <p class="text-slate-500 font-medium">Analysis View</p>
-                <p class="text-slate-400 text-sm">Screenshot placeholder</p>
+        <!-- App Screenshots - Left Right Left Layout -->
+        <div class="space-y-16">
+          <!-- First Screenshot - Left -->
+          <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="order-1 lg:order-1">
+              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl animate-pulse hover:animate-none">
+                <img src="/assets/images/dashboard.png" 
+                     alt="Real-time Dashboard Screenshot" 
+                     class="w-full h-80 object-cover rounded-xl transition-transform duration-300 hover:scale-105"/>
               </div>
             </div>
-            <div class="p-4">
-              <h4 class="font-semibold text-slate-800 mb-2">Detailed Analysis</h4>
-              <p class="text-slate-600 text-sm">Comprehensive emotional analysis with therapeutic music recommendations</p>
+            <div class="order-2 lg:order-2">
+              <div class="transform hover:translate-x-2 transition-transform duration-300">
+                <h4 class="text-3xl font-bold text-slate-800 mb-4">Real-time Dashboard and Detailed Analysis</h4>
+                <p class="text-lg text-slate-600 leading-relaxed">
+                  Experience live emotion detection with our comprehensive dashboard. Monitor your mental state in real-time with advanced AI-powered analysis, brainwave visualization, and personalized therapeutic music recommendations.
+                </p>
+                <div class="mt-6 space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <span class="text-slate-700">Live emotion classification</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <span class="text-slate-700">Real-time brainwave data</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <span class="text-slate-700">Therapeutic recommendations</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Second Screenshot - Right -->
+          <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="order-2 lg:order-1">
+              <div class="transform hover:-translate-x-2 transition-transform duration-300">
+                <h4 class="text-3xl font-bold text-slate-800 mb-4">Live Wave Analysis</h4>
+                <p class="text-lg text-slate-600 leading-relaxed">
+                  Visualize your brainwaves in real-time with our interactive charts. Track Alpha, Beta, Theta, Delta, and Gamma wave patterns to understand your mental state and cognitive performance.
+                </p>
+                <div class="mt-6 space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-slate-700">Multi-frequency analysis</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" style="animation-delay: 0.1s"></div>
+                    <span class="text-slate-700">Interactive wave charts</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                    <span class="text-slate-700">Historical tracking</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="order-1 lg:order-2">
+              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl animate-pulse hover:animate-none">
+                <img src="/assets/images/waves.png" 
+                     alt="Live Brainwave Charts Screenshot" 
+                     class="w-full h-80 object-cover rounded-xl transition-transform duration-300 hover:scale-105"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Third Screenshot - Left -->
+          <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="order-1 lg:order-1">
+              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-4 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl">
+                <div class="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl h-80 flex items-center justify-center transition-all duration-300 hover:from-blue-50 hover:to-sky-50">
+                  <div class="text-center transform hover:scale-110 transition-transform duration-300">
+                    <svg class="w-20 h-20 text-slate-400 mx-auto mb-4 animate-spin" style="animation-duration: 3s" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-slate-500 font-medium text-lg">Comprehensive Analysis</p>
+                    <p class="text-slate-400">Coming Soon</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="order-2 lg:order-2">
+              <div class="transform hover:translate-x-2 transition-transform duration-300">
+                <h4 class="text-3xl font-bold text-slate-800 mb-4">Comprehensive Mental Health Insights</h4>
+                <p class="text-lg text-slate-600 leading-relaxed">
+                  Get detailed analysis of your emotional patterns, stress levels, and cognitive performance. Our AI provides personalized insights to help you optimize your mental wellness journey.
+                </p>
+                <div class="mt-6 space-y-3">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+                    <span class="text-slate-700">Emotional pattern analysis</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <span class="text-slate-700">Stress level monitoring</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <span class="text-slate-700">Personalized recommendations</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
