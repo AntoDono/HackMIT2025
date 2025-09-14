@@ -17,8 +17,7 @@ class CerebrasClient:
     def call_llm(self, prompt: str) -> str:
         """Make actual API call to Cerebras LLM."""
         if not self.client:
-            print("Warning: No CEREBRAS_API_KEY found, using mock response")
-            return self._mock_llm_response_from_prompt(prompt)
+            raise ValueError("No CEREBRAS_API_KEY found - API key is required")
         
         try:
             completion_response = self.client.chat.completions.create(
@@ -44,7 +43,7 @@ class CerebrasClient:
                 
         except Exception as e:
             print(f"Error calling Cerebras API: {e}")
-            return self._mock_llm_response_from_prompt(prompt)
+            raise e
     
     def generate_song_description(self, classified_emotion: str, eeg_analysis: Dict[str, Any]) -> str:
         """
@@ -61,7 +60,7 @@ class CerebrasClient:
             # Create the prompt for the LLM
             prompt = self._build_therapeutic_prompt(classified_emotion, eeg_analysis)
             
-            # Make actual LLM API call (falls back to mock if no API key)
+            # Make actual LLM API call
             llm_response = self.call_llm(prompt)
             
             # Parse JSON response
@@ -91,6 +90,16 @@ Your task is to analyze this emotional and neurological data and create a specif
 2. The brainwave patterns and what they suggest about the user's mental state
 3. Therapeutic music principles for emotional regulation
 4. Specific musical parameters (BPM, instruments, genre, mood) that promote emotional balance
+5. Keep the description concise and to the point.
+
+Example:
+
+```json
+{
+  "song_description": "90 BPM, soft piano, warm strings, and subtle nature sounds, bird noises, nature."
+}
+```
+
 
 Respond with a JSON object containing only the song_description field:
 
@@ -125,67 +134,6 @@ The song_description should be a single, detailed sentence suitable for Suno AI 
         else:
             return obj
     
-    def _mock_llm_response(self, classified_emotion: str, eeg_analysis: Dict[str, Any]) -> str:
-        """Mock LLM response for testing purposes."""
-        # Extract key metrics for decision making
-        cognitive = eeg_analysis.get('cognitive_indicators', {})
-        focus_index = cognitive.get('focus_index', 0)
-        relaxation_index = cognitive.get('relaxation_index', 0)
-        mental_workload = cognitive.get('mental_workload', 0)
-        
-        # Generate therapeutic response based on emotion and EEG data
-        if classified_emotion.lower() in ['stress', 'anxiety', 'nervous'] or mental_workload > 0.7:
-            response = {
-                "song_description": "Gentle ambient meditation track at 60-70 BPM with soft piano, warm strings, and subtle nature sounds, designed to reduce cortisol levels and activate the parasympathetic nervous system for deep relaxation and stress relief"
-            }
-        elif classified_emotion.lower() in ['sad', 'depressed', 'melancholy'] or (focus_index < 0.3 and relaxation_index < 0.3):
-            response = {
-                "song_description": "Uplifting acoustic folk track at 90-100 BPM with bright acoustic guitar, gentle percussion, and warm piano, crafted to gradually elevate mood and restore emotional balance through major key progressions and rhythmic stability"
-            }
-        elif classified_emotion.lower() in ['angry', 'frustrated', 'agitated'] or focus_index > 0.8:
-            response = {
-                "song_description": "Calming downtempo electronic track at 70-80 BPM with soft synthesizer pads, minimal beats, and flowing melodies, therapeutically designed to cool emotional intensity and guide toward centered tranquility"
-            }
-        elif classified_emotion.lower() in ['excited', 'manic', 'hyperactive']:
-            response = {
-                "song_description": "Soothing classical minimalism at 65-75 BPM featuring solo piano with sustained string accompaniment, structured to gently slow racing thoughts and restore emotional equilibrium through repetitive, calming patterns"
-            }
-        elif classified_emotion.lower() in ['focused', 'concentrated'] and relaxation_index < 0.4:
-            response = {
-                "song_description": "Balanced instrumental track at 80-85 BPM with acoustic guitar, soft strings, and light percussion, designed to maintain mental clarity while introducing gentle relaxation to prevent cognitive fatigue"
-            }
-        else:  # neutral or balanced state
-            response = {
-                "song_description": "Harmonious modern classical piece at 75-85 BPM with piano, strings, and subtle ambient textures, crafted to maintain emotional stability and support continued well-being"
-            }
-        
-        return f"```json\n{json.dumps(response, indent=2)}\n```"
-    
-    def _mock_llm_response_from_prompt(self, prompt: str) -> str:
-        """Generate mock response based on the prompt content."""
-        # Extract emotion and EEG data from prompt for mock response
-        if "stress" in prompt.lower() or "anxiety" in prompt.lower():
-            response = {
-                "song_description": "Gentle ambient meditation track at 60-70 BPM with soft piano, warm strings, and subtle nature sounds, designed to reduce cortisol levels and activate the parasympathetic nervous system for deep relaxation and stress relief"
-            }
-        elif "sad" in prompt.lower() or "depressed" in prompt.lower():
-            response = {
-                "song_description": "Uplifting acoustic folk track at 90-100 BPM with bright acoustic guitar, gentle percussion, and warm piano, crafted to gradually elevate mood and restore emotional balance through major key progressions and rhythmic stability"
-            }
-        elif "angry" in prompt.lower() or "frustrated" in prompt.lower():
-            response = {
-                "song_description": "Calming downtempo electronic track at 70-80 BPM with soft synthesizer pads, minimal beats, and flowing melodies, therapeutically designed to cool emotional intensity and guide toward centered tranquility"
-            }
-        elif "excited" in prompt.lower() or "manic" in prompt.lower():
-            response = {
-                "song_description": "Soothing classical minimalism at 65-75 BPM featuring solo piano with sustained string accompaniment, structured to gently slow racing thoughts and restore emotional equilibrium through repetitive, calming patterns"
-            }
-        else:
-            response = {
-                "song_description": "Harmonious modern classical piece at 75-85 BPM with piano, strings, and subtle ambient textures, crafted to maintain emotional stability and support continued well-being"
-            }
-        
-        return f"```json\n{json.dumps(response, indent=2)}\n```"
     
     def _parse_json_response(self, llm_response: str) -> str:
         """Parse JSON response from LLM and extract song_description."""
@@ -213,4 +161,109 @@ The song_description should be a single, detailed sentence suitable for Suno AI 
             print(f"Raw response: {llm_response}")
             # Return fallback
             return "therapeutic ambient music at 75 BPM with calming instruments, designed to restore emotional balance"
+    
+    def analyze_current_eeg_data(self, labeled_sample: Dict[str, Dict]) -> str:
+        """
+        Analyze current EEG data sample and provide a short emotional analysis.
+        
+        Args:
+            labeled_sample: Dictionary containing labeled brainwave values with structure:
+                           {"key": {"value": float, "label": str, "unit": str}}
+            
+        Returns:
+            str: Short emotional analysis based on current EEG data
+        """
+        try:
+            # Create the prompt for the LLM
+            prompt = self._build_eeg_analysis_prompt(labeled_sample)
+            
+            # Make actual LLM API call
+            llm_response = self.call_llm(prompt)
+            
+            # Parse JSON response
+            analysis = self._parse_eeg_analysis_response(llm_response)
+            
+            return analysis
+            
+        except Exception as e:
+            print(f"Error analyzing current EEG data: {e}")
+            # Fallback analysis
+            return self._fallback_eeg_analysis(labeled_sample)
+    
+    def _build_eeg_analysis_prompt(self, labeled_sample: Dict[str, Dict]) -> str:
+        """Build the prompt for analyzing current EEG data."""
+        prompt = f"""You are a neuroscience AI that analyzes EEG brainwave data to determine current emotional state.
+
+Current EEG Sample with Labels:
+{json.dumps(labeled_sample, indent=2)}
+
+Analyze these brainwave frequencies and provide a very short emotional analysis:
+- Delta (0.5-4 Hz): Deep sleep, unconscious processes
+- Theta (4-8 Hz): Creativity, meditation, REM sleep
+- Low Alpha (8-10 Hz): Relaxed awareness, calm
+- High Alpha (10-12 Hz): Alert relaxation, focused calm
+- Low Beta (12-15 Hz): Focused attention, concentration
+- High Beta (15-30 Hz): Alertness, anxiety, active thinking
+- Low Gamma (30-40 Hz): Cognitive processing, consciousness
+- Mid Gamma (40-100 Hz): High-level cognitive functions
+- Attention: Focus level (0-100)
+- Meditation: Relaxation level (0-100)
+
+Respond with a JSON object containing only a short emotional analysis:
+
+{{
+  "emotional_analysis": "A brief 1-2 sentence analysis of the current emotional/mental state based on the brainwave patterns"
+}}
+
+Keep the analysis concise and focused on the dominant emotional state indicated by the brainwave patterns."""
+        
+        return prompt
+    
+    def _parse_eeg_analysis_response(self, llm_response: str) -> str:
+        """Parse JSON response from LLM and extract emotional analysis."""
+        try:
+            json_str = llm_response.strip()
+            
+            # Check if it's wrapped in code blocks
+            json_match = re.search(r'```json\s*(.*?)\s*```', json_str, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1)
+            
+            # Parse JSON
+            parsed = json.loads(json_str)
+            
+            # Extract emotional_analysis
+            if 'emotional_analysis' in parsed:
+                return parsed['emotional_analysis']
+            else:
+                raise ValueError("No 'emotional_analysis' field found in response")
+                
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Error parsing EEG analysis response: {e}")
+            print(f"Raw response: {llm_response}")
+            # Return fallback
+            return "Current brainwave patterns suggest a neutral emotional state with moderate alertness."
+    
+    def _fallback_eeg_analysis(self, labeled_sample: Dict[str, Dict]) -> str:
+        """Provide fallback analysis based on EEG values."""
+        attention = labeled_sample.get('attention', {}).get('value', 0)
+        meditation = labeled_sample.get('meditation', {}).get('value', 0)
+        high_beta = labeled_sample.get('highBeta', {}).get('value', 0)
+        low_alpha = labeled_sample.get('lowAlpha', {}).get('value', 0)
+        high_alpha = labeled_sample.get('highAlpha', {}).get('value', 0)
+        theta = labeled_sample.get('theta', {}).get('value', 0)
+        
+        # Simple rule-based analysis
+        if high_beta > 50000 and attention > 70:
+            return "High alertness and focused attention detected, possibly indicating stress or intense concentration."
+        elif meditation > 70 and (low_alpha + high_alpha) > 30000:
+            return "Relaxed and meditative state with strong alpha waves, indicating calm awareness."
+        elif theta > 40000 and attention < 40:
+            return "Creative and introspective state with elevated theta waves, suggesting daydreaming or meditation."
+        elif attention > 80 and meditation < 30:
+            return "Highly focused but tense state, indicating active problem-solving or potential anxiety."
+        elif meditation > 50 and attention > 50:
+            return "Balanced state showing both focus and relaxation, indicating optimal mental performance."
+        else:
+            return "Neutral emotional state with moderate brain activity across all frequency bands."
     

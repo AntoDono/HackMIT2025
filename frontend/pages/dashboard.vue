@@ -32,21 +32,29 @@
       <!-- Current Emotion and Data Row -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <!-- Current Emotion Display -->
-        <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6 flex items-center justify-center">
-          <div class="text-center">
+        <div class="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/20 p-6">
+          <div class="text-center mb-4">
             <div class="relative mb-4">
-              <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center border-4 border-purple-500/30">
-                <span class="text-3xl">{{ getEmotionEmoji(currentEmotion) }}</span>
+              <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center border-4 border-purple-500/30">
+                <span class="text-2xl">{{ getEmotionEmoji(currentEmotion) }}</span>
               </div>
               <div class="absolute -inset-1 rounded-full border-2 border-purple-500/20 animate-pulse"></div>
             </div>
             
-            <h3 class="text-xl font-bold text-white mb-1 capitalize">
+            <h3 class="text-lg font-bold text-white mb-1 capitalize">
               {{ currentEmotion || 'Detecting...' }}
             </h3>
             
-            <div class="text-gray-400 text-xs">
+            <div class="text-gray-400 text-xs mb-2">
               {{ lastUpdateTime }}
+            </div>
+          </div>
+          
+          <!-- Real-time Emotion Analysis -->
+          <div class="border-t border-gray-700/50 pt-3">
+            <div class="text-xs text-gray-400 mb-1">Current Analysis:</div>
+            <div class="text-sm text-gray-300 leading-relaxed">
+              {{ currentEmotionAnalysis || 'Analyzing brainwave patterns...' }}
             </div>
           </div>
         </div>
@@ -154,9 +162,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 // Reactive data
 const connectionStatus = ref('disconnected')
 const currentEmotion = ref('')
+const currentEmotionAnalysis = ref('')
 const sampleCount = ref(0)
 const lastUpdateTime = ref('')
 const currentBrainwaveData = ref({})
+const currentLabeledData = ref({})
 const emotionHistory = ref([])
 const brainwaveDataPoints = ref([])
 
@@ -333,7 +343,10 @@ function handleSSEMessage(data) {
       
     case 'brainwave_data':
       currentBrainwaveData.value = data.data || {}
+      currentLabeledData.value = data.labeled_data || {}
+      currentEmotionAnalysis.value = data.current_emotion_analysis || ''
       sampleCount.value = data.sample_count
+      lastUpdateTime.value = new Date().toLocaleTimeString()
       
       // Add to wave visualization data
       brainwaveDataPoints.value.push(data.data)

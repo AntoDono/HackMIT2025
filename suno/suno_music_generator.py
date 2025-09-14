@@ -43,7 +43,7 @@ class SunoMusicGenerator:
             "prompt": prompt,
             "title": title,
             "tags": tags,
-            "makeInstrumental": make_instrumental
+            "make_instrumental": make_instrumental
         }
 
         try:

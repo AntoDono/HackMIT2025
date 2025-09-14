@@ -16,7 +16,7 @@
   "model_meta": {},
   "user_info": {
     "full_name": "henry wang",
-    "target_emotion": "relax"
+    "target_emotion": "relaxed"
   },
   "gamma_reconstructed": true,
   "reconstruction_method": "beta_correlation_with_noise",

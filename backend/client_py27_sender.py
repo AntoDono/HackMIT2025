@@ -13,7 +13,7 @@ import Queue
 
 # Global socket connection
 socket_connection = None
-server_host = "10.189.119.65"
+server_host = "10.189.32.167"
 server_port = 8000  # Different port for plain socket
 
 # Threading globals

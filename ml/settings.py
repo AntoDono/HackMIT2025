@@ -2,7 +2,7 @@
 # TRAINING PARAMETERS - Configure these at the top
 # =============================================================================
 CHUNK_SIZE = 30                    # Size of each data chunk for training
-EPOCHS = 100                        # Number of training epochs
+EPOCHS = 50                        # Number of training epochs
 BATCH_SIZE = 64                    # Training batch size
 VALIDATION_SPLIT = 0.2             # Fraction of data for validation
 LEARNING_RATE = 0.001              # Learning rate for optimizer
@@ -23,4 +23,4 @@ FEATURE_COLUMNS = [
 ]
 
 # Hardcoded emotion labels
-HARDCODED_LABELS = ['focused', 'nervous', 'relax', 'stress', 'surprise']
+HARDCODED_LABELS = ['focused', 'nervous', 'relaxed', 'stress', 'surprise', 'excited']
