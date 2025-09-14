@@ -5,6 +5,7 @@ from tensorflow import keras
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import warnings
+from settings import *
 warnings.filterwarnings('ignore')
 
 class BrainwaveModel:
@@ -75,10 +76,11 @@ class BrainwaveModel:
             np.array: Array of chunks with shape (num_chunks, num_points, num_waves)
         """
         if len(df) < self.num_points:
-            # If we don't have enough data, pad with zeros or repeat the data
+            # If we don't have enough data, pad with zeros at the front
             padding_needed = self.num_points - len(df)
-            padded_df = pd.concat([df, pd.DataFrame(np.zeros((padding_needed, len(self.wave_types))), 
-                                                  columns=self.wave_types)])
+            padding_df = pd.DataFrame(np.zeros((padding_needed, len(self.wave_types))), 
+                                    columns=self.wave_types)
+            padded_df = pd.concat([padding_df, df], ignore_index=True)
             return np.array([padded_df.values])
         
         num_chunks = len(df) - self.num_points + 1
@@ -183,8 +185,10 @@ class BrainwaveModel:
         self.is_trained = True
         print(f"Model loaded from {filepath}")
 
-def generate_fake_data(num_samples=2000, wave_types=['alpha', 'beta', 'gamma', 'delta', 'theta']):
+def generate_fake_data(num_samples=2000, wave_types=None):
     """Generate fake brain wave data for testing."""
+    if wave_types is None:
+        wave_types = FEATURE_COLUMNS
     np.random.seed(42)  # For reproducible results
     
     data = {}
@@ -207,8 +211,8 @@ if __name__ == "__main__":
     print("=== Brain Wave Model Demo ===\n")
     
     # Initialize model
-    wave_types = ['alpha', 'beta', 'gamma', 'delta', 'theta']
-    num_points = 50  # Use 50 points per prediction for faster demo
+    wave_types = FEATURE_COLUMNS
+    num_points = CHUNK_SIZE  # Use chunk size from settings
     model = BrainwaveModel(wave_types=wave_types, num_points=num_points)
     
     print(f"Model initialized with waves: {wave_types}")

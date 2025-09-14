@@ -13,18 +13,14 @@ from tensorflow import keras
 from sklearn.preprocessing import LabelEncoder
 import joblib
 import warnings
+from settings import *
 warnings.filterwarnings('ignore')
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-MODEL_PATH = '../models/brainwave_model.h5'
-ENCODER_PATH = '../models/label_encoder.joblib'
-CHUNK_SIZE = 30  # Must match training chunk size
-FEATURE_COLUMNS = [
-    'attention', 'meditation', 'delta', 'theta', 
-    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta'
-]
+MODEL_PATH = MODEL_SAVE_PATH
+ENCODER_PATH = ENCODER_SAVE_PATH
 
 # =============================================================================
 # GLOBAL MODEL LOADING
@@ -91,13 +87,11 @@ def create_inference_chunk(df, chunk_size=CHUNK_SIZE):
         np.array: Single chunk with shape (1, chunk_size, num_features)
     """
     if len(df) < chunk_size:
-        # Pad with zeros if not enough data
+        # Pad with zeros at the front if not enough data
         padding_needed = chunk_size - len(df)
-        padded_df = pd.concat([
-            df, 
-            pd.DataFrame(np.zeros((padding_needed, len(FEATURE_COLUMNS))), 
-                        columns=FEATURE_COLUMNS)
-        ])
+        padding_df = pd.DataFrame(np.zeros((padding_needed, len(FEATURE_COLUMNS))), 
+                                columns=FEATURE_COLUMNS)
+        padded_df = pd.concat([padding_df, df], ignore_index=True)
         return np.array([padded_df.values])
     
     # Use the most recent data
@@ -121,6 +115,10 @@ def infer_emotion(df):
         
         if len(processed_df) == 0:
             return "unknown"  # No valid data
+        
+        # If we have more data than chunk size, take only the latest chunk_size rows
+        if len(processed_df) > CHUNK_SIZE:
+            processed_df = processed_df.tail(CHUNK_SIZE)
         
         # Create inference chunk
         X = create_inference_chunk(processed_df, CHUNK_SIZE)
@@ -191,7 +189,7 @@ def run_test_suite():
     print("RUNNING INFERENCE TEST SUITE")
     print("=" * 60)
     
-    data_dir = '../backend/saved-audio'
+    data_dir = DATA_DIR
     csv_files = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
     
     if not csv_files:

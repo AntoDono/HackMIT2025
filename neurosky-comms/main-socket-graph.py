@@ -23,7 +23,7 @@ import client_py27_sender
 # Define EEG data structure
 EEGReading = namedtuple('EEGReading', [
     'timestamp', 'attention', 'meditation', 'delta', 'theta', 
-    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta'
+    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta', 'lowGamma', 'midGamma'
 ])
 
 # Global variables
@@ -32,7 +32,8 @@ eeg_data = deque(maxlen=MAX_SCORE_CACHE)
 start_time = None
 current_reading = {
     'attention': None, 'meditation': None, 'delta': None, 'theta': None,
-    'lowAlpha': None, 'highAlpha': None, 'lowBeta': None, 'highBeta': None
+    'lowAlpha': None, 'highAlpha': None, 'lowBeta': None, 'highBeta': None,
+    'lowGamma': None, 'midGamma': None
 }
 
 # Real-time plotting globals
@@ -80,11 +81,13 @@ def send_eeg_data(reading):
         "lowAlpha": reading.lowAlpha,
         "highAlpha": reading.highAlpha,
         "lowBeta": reading.lowBeta,
-        "highBeta": reading.highBeta
+        "highBeta": reading.highBeta,
+        "lowGamma": reading.lowGamma,
+        "midGamma": reading.midGamma
     }
     client_py27_sender.send_eeg_data(data)
-    print("Sent: Att={:.1f} Med={:.1f} Delta={:.0f} Theta={:.0f}".format(
-        reading.attention, reading.meditation, reading.delta, reading.theta))
+    print("Sent: Att={:.1f} Med={:.1f} Delta={:.0f} Theta={:.0f} LowGamma={:.0f} MidGamma={:.0f}".format(
+        reading.attention, reading.meditation, reading.delta, reading.theta, reading.lowGamma, reading.midGamma))
 
 def init_plot():
     """Initialize the real-time plot with separate charts for each brainwave type"""
@@ -114,8 +117,8 @@ def init_plot():
         # Row 3
         {'ax': axes[2,0], 'title': 'Beta Waves (13-30 Hz)', 'ylabel': 'Power', 'ylim': (0, 20000), 
          'signals': [('lowBeta', 'cyan'), ('highBeta', 'darkcyan')]},
-        {'ax': axes[2,1], 'title': 'Status', 'ylabel': 'Connection Status', 'ylim': (0, 1), 
-         'signals': []}
+        {'ax': axes[2,1], 'title': 'Gamma Waves (30-100 Hz)', 'ylabel': 'Power', 'ylim': (0, 10000), 
+         'signals': [('lowGamma', 'magenta'), ('midGamma', 'darkmagenta')]}
     ]
     
     # Initialize each chart
@@ -170,7 +173,9 @@ def render_scores():
             'lowAlpha': [r.lowAlpha for r in readings],
             'highAlpha': [r.highAlpha for r in readings],
             'lowBeta': [r.lowBeta for r in readings],
-            'highBeta': [r.highBeta for r in readings]
+            'highBeta': [r.highBeta for r in readings],
+            'lowGamma': [r.lowGamma for r in readings],
+            'midGamma': [r.midGamma for r in readings]
         }
         
         # Update each line with its data
@@ -187,7 +192,7 @@ def render_scores():
                     ax.set_xlim(x_min, x_max)
         
         # Auto-scale y-axis for brainwave power charts (not attention/meditation)
-        brainwave_signals = ['delta', 'theta', 'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta']
+        brainwave_signals = ['delta', 'theta', 'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta', 'lowGamma', 'midGamma']
         for signal_name in brainwave_signals:
             if signal_name in signal_data and signal_data[signal_name]:
                 max_val = max(signal_data[signal_name])
@@ -205,6 +210,7 @@ def render_scores():
             info_text = "Time: {:.1f}s | Readings: {}\n".format(current_time, len(readings))
             info_text += "Att: {:.1f} | Med: {:.1f}\n".format(latest.attention, latest.meditation)
             info_text += "Delta: {:.0f} | Theta: {:.0f}\n".format(latest.delta, latest.theta)
+            info_text += "LowGamma: {:.0f} | MidGamma: {:.0f}\n".format(latest.lowGamma, latest.midGamma)
             info_text += "Socket: Active"
             
             # Remove any existing text annotations
@@ -269,7 +275,9 @@ def update_reading(key, value):
             lowAlpha=current_reading['lowAlpha'] or 0,
             highAlpha=current_reading['highAlpha'] or 0,
             lowBeta=current_reading['lowBeta'] or 0,
-            highBeta=current_reading['highBeta'] or 0
+            highBeta=current_reading['highBeta'] or 0,
+            lowGamma=current_reading['lowGamma'] or 0,
+            midGamma=current_reading['midGamma'] or 0
         )
         
         # Store data for plotting
@@ -306,6 +314,12 @@ def handle_low_beta(level):
 
 def handle_high_beta(level):
     update_reading('highBeta', level)
+
+def handle_low_gamma(level):
+    update_reading('lowGamma', level)
+
+def handle_mid_gamma(level):
+    update_reading('midGamma', level)
 
 def main():
     """Main function"""
@@ -346,6 +360,8 @@ def main():
     neuropy.setCallBack("highAlpha", handle_high_alpha)
     neuropy.setCallBack("lowBeta", handle_low_beta)
     neuropy.setCallBack("highBeta", handle_high_beta)
+    neuropy.setCallBack("lowGamma", handle_low_gamma)
+    neuropy.setCallBack("midGamma", handle_mid_gamma)
     
     print("Starting NeuroSky data collection...")
     neuropy.start()

@@ -19,14 +19,15 @@ import client_py27_sender
 # Define EEG data structure
 EEGReading = namedtuple('EEGReading', [
     'timestamp', 'attention', 'meditation', 'delta', 'theta', 
-    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta'
+    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta', 'lowGamma', 'midGamma'
 ])
 
 # Global variables
 start_time = None
 current_reading = {
     'attention': None, 'meditation': None, 'delta': None, 'theta': None,
-    'lowAlpha': None, 'highAlpha': None, 'lowBeta': None, 'highBeta': None
+    'lowAlpha': None, 'highAlpha': None, 'lowBeta': None, 'highBeta': None,
+    'lowGamma': None, 'midGamma': None
 }
 
 def find_neurosky_port():
@@ -66,11 +67,13 @@ def send_eeg_data(reading):
         "lowAlpha": reading.lowAlpha,
         "highAlpha": reading.highAlpha,
         "lowBeta": reading.lowBeta,
-        "highBeta": reading.highBeta
+        "highBeta": reading.highBeta,
+        "lowGamma": reading.lowGamma,
+        "midGamma": reading.midGamma
     }
     client_py27_sender.send_eeg_data(data)
-    print("Sent: Att={:.1f} Med={:.1f} Delta={:.0f} Theta={:.0f}".format(
-        reading.attention, reading.meditation, reading.delta, reading.theta))
+    print("Sent: Att={:.1f} Med={:.1f} Delta={:.0f} Theta={:.0f} LowGamma={:.0f} MidGamma={:.0f}".format(
+        reading.attention, reading.meditation, reading.delta, reading.theta, reading.lowGamma, reading.midGamma))
 
 def update_reading(key, value):
     """Update current reading and send when complete"""
@@ -95,7 +98,9 @@ def update_reading(key, value):
             lowAlpha=current_reading['lowAlpha'] or 0,
             highAlpha=current_reading['highAlpha'] or 0,
             lowBeta=current_reading['lowBeta'] or 0,
-            highBeta=current_reading['highBeta'] or 0
+            highBeta=current_reading['highBeta'] or 0,
+            lowGamma=current_reading['lowGamma'] or 0,
+            midGamma=current_reading['midGamma'] or 0
         )
         
         send_eeg_data(reading)
@@ -129,6 +134,12 @@ def handle_low_beta(level):
 def handle_high_beta(level):
     update_reading('highBeta', level)
 
+def handle_low_gamma(level):
+    update_reading('lowGamma', level)
+
+def handle_mid_gamma(level):
+    update_reading('midGamma', level)
+
 def main():
     """Main function"""
     print("Finding NeuroSky device...")
@@ -158,6 +169,8 @@ def main():
     neuropy.setCallBack("highAlpha", handle_high_alpha)
     neuropy.setCallBack("lowBeta", handle_low_beta)
     neuropy.setCallBack("highBeta", handle_high_beta)
+    neuropy.setCallBack("lowGamma", handle_low_gamma)
+    neuropy.setCallBack("midGamma", handle_mid_gamma)
     
     print("Starting NeuroSky data collection...")
     neuropy.start()

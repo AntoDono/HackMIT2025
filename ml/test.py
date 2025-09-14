@@ -2,14 +2,15 @@ import pandas as pd
 import numpy as np
 import time
 from main import BrainwaveModel, generate_fake_data
+from settings import *
 
 def test_basic_functionality():
     """Test basic model functionality (original demo)."""
     print("=== Brain Wave Model Demo ===\n")
     
     # Initialize model
-    wave_types = ['alpha', 'beta', 'gamma', 'delta', 'theta']
-    num_points = 50  # Use 50 points per prediction for faster demo
+    wave_types = FEATURE_COLUMNS
+    num_points = CHUNK_SIZE  # Use chunk size from settings
     model = BrainwaveModel(wave_types=wave_types, num_points=num_points)
     
     print(f"Model initialized with waves: {wave_types}")

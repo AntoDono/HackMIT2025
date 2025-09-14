@@ -6,9 +6,27 @@ import argparse
 import sys
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+import queue
+import time
 
 import pandas as pd
 import numpy as np
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUNO_API_KEY = os.getenv('SUNO_API_KEY')
+CEREBRAS_API_KEY = os.getenv('CEREBRAS_API_KEY')
+
+# Import ML inference
+try:
+    sys.path.append('../ml')
+    from inference import infer_emotion
+    print("ML inference module loaded")
+except ImportError as e:
+    print(f"ML inference not available: {e}")
+    infer_emotion = None
 
 # External hooks (try/except imports)
 try:
@@ -64,6 +82,11 @@ user_session = {
     "target_emotion": None
 }
 
+# Simple WebSocket data storage
+websocket_clients = []
+emotion_history = []
+data_queue = queue.Queue()
+
 def add_row(sample_dict: Dict[str, float]) -> int:
     """Add a row to the DataFrame and return new size."""
     global brainwave_data
@@ -72,7 +95,49 @@ def add_row(sample_dict: Dict[str, float]) -> int:
         ordered_values = [sample_dict[col] for col in BRAINWAVE_COLUMNS]
         new_row = pd.DataFrame([ordered_values], columns=BRAINWAVE_COLUMNS)
         brainwave_data = pd.concat([brainwave_data, new_row], ignore_index=True)
-        return len(brainwave_data)
+        new_size = len(brainwave_data)
+        
+        # Perform emotion inference every 10 data points (and only if we have enough data)
+        if new_size > 5 and new_size % 10 == 0 and infer_emotion is not None:
+            try:
+                predicted_emotion = infer_emotion(brainwave_data.copy())
+                print(f"🧠 Emotion Inference: {predicted_emotion} (based on {new_size} samples)")
+                
+                # Add to emotion history
+                import datetime
+                emotion_entry = {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "emotion": predicted_emotion,
+                    "sample_count": new_size
+                }
+                emotion_history.append(emotion_entry)
+                
+                # Keep only last 100 emotions
+                if len(emotion_history) > 100:
+                    emotion_history.pop(0)
+                
+                # Add to broadcast queue
+                broadcast_data = {
+                    "type": "emotion_update",
+                    "current_emotion": predicted_emotion,
+                    "sample_count": new_size,
+                    "brainwave_data": sample_dict,
+                    "emotion_history": emotion_history[-10:]  # Last 10 emotions
+                }
+                data_queue.put(json.dumps(broadcast_data))
+                
+            except Exception as e:
+                print(f"⚠️  Emotion inference error: {e}")
+        
+        # Always broadcast brainwave data
+        brainwave_broadcast = {
+            "type": "brainwave_data",
+            "data": sample_dict,
+            "sample_count": new_size
+        }
+        data_queue.put(json.dumps(brainwave_broadcast))
+        
+        return new_size
 
 def get_center_slice() -> pd.DataFrame:
     """Get center 100 rows (excluding first 10 and last 10)."""
@@ -281,6 +346,76 @@ def predict_one(sample_dict: Dict[str, float]) -> Dict[str, Any]:
         "columns": BRAINWAVE_COLUMNS.copy()
     }
 
+# Simple HTTP server for Server-Sent Events
+def handle_sse_client(client_socket, client_address):
+    """Handle SSE client connections"""
+    print(f"SSE client connected from {client_address}")
+    websocket_clients.append(client_socket)
+    
+    try:
+        # Send HTTP headers for SSE
+        headers = (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/event-stream\r\n"
+            "Cache-Control: no-cache\r\n"
+            "Connection: keep-alive\r\n"
+            "Access-Control-Allow-Origin: *\r\n"
+            "\r\n"
+        )
+        client_socket.send(headers.encode())
+        
+        # Send initial data
+        initial_data = {
+            "type": "initial_data",
+            "emotion_history": emotion_history[-10:],
+            "sample_count": len(brainwave_data)
+        }
+        sse_message = f"data: {json.dumps(initial_data)}\n\n"
+        client_socket.send(sse_message.encode())
+        
+        # Keep sending data from queue
+        while True:
+            try:
+                # Get data from queue with timeout
+                message = data_queue.get(timeout=30)
+                sse_message = f"data: {message}\n\n"
+                client_socket.send(sse_message.encode())
+                data_queue.task_done()
+            except queue.Empty:
+                # Send heartbeat
+                client_socket.send("data: {\"type\": \"heartbeat\"}\n\n".encode())
+            except:
+                break
+                
+    except Exception as e:
+        print(f"SSE client {client_address} error: {e}")
+    finally:
+        if client_socket in websocket_clients:
+            websocket_clients.remove(client_socket)
+        client_socket.close()
+        print(f"SSE client {client_address} disconnected")
+
+def start_sse_server(host="0.0.0.0", port=8001):
+    """Start simple SSE server"""
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+    print(f"SSE Server listening on {host}:{port}")
+    
+    while True:
+        try:
+            client_socket, client_address = server_socket.accept()
+            client_thread = threading.Thread(
+                target=handle_sse_client,
+                args=(client_socket, client_address)
+            )
+            client_thread.daemon = True
+            client_thread.start()
+        except Exception as e:
+            print(f"SSE server error: {e}")
+            break
+
 # Socket server functions
 def handle_client_connection(client_socket, client_address):
     """Handle individual client connection"""
@@ -314,6 +449,8 @@ def handle_client_connection(client_socket, client_address):
                     
                     # Add to DataFrame
                     new_size = add_row(sample_dict)
+
+                    
                     
                     # Send acknowledgment
                     response = json.dumps({"ok": True, "count": new_size}) + '\n'
@@ -381,6 +518,14 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
     server_running = threading.Event()
     server_running.set()
     
+    # Start SSE server in background
+    def run_sse_server():
+        start_sse_server("0.0.0.0", 8001)
+    
+    sse_thread = threading.Thread(target=run_sse_server)
+    sse_thread.daemon = True
+    sse_thread.start()
+    
     # Collect user info if in save mode
     if save_mode:
         if not collect_user_info():
@@ -413,6 +558,7 @@ def start_socket_server(host="0.0.0.0", port=8000, save_mode=False):
         server_socket.bind((host, port))
         server_socket.listen(5)
         print(f"EEG Socket Server listening on {host}:{port}")
+        print(f"SSE Server listening on {host}:8001")
         if save_mode:
             print("Save mode enabled. Type 'stop' to save data and exit.")
         

@@ -16,31 +16,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 import warnings
 from main import BrainwaveModel
+from settings import *
 warnings.filterwarnings('ignore')
-
-# =============================================================================
-# TRAINING PARAMETERS - Configure these at the top
-# =============================================================================
-CHUNK_SIZE = 30                    # Size of each data chunk for training
-EPOCHS = 100                        # Number of training epochs
-BATCH_SIZE = 64                    # Training batch size
-VALIDATION_SPLIT = 0.2             # Fraction of data for validation
-LEARNING_RATE = 0.001              # Learning rate for optimizer
-DROPOUT_RATE = 0.05                 # Dropout rate for regularization
-HIDDEN_UNITS = [512, 1024, 2048, 1024, 512]       # Hidden layer sizes
-TEST_SIZE = 0.2                    # Fraction of data for testing
-RANDOM_STATE = 42                  # Random seed for reproducibility
-
-# Data paths
-DATA_DIR = '../backend/saved-audio'
-MODEL_SAVE_PATH = '../models/brainwave_model.h5'
-ENCODER_SAVE_PATH = '../models/label_encoder.joblib'
-
-# Brainwave feature columns
-FEATURE_COLUMNS = [
-    'attention', 'meditation', 'delta', 'theta', 
-    'lowAlpha', 'highAlpha', 'lowBeta', 'highBeta'
-]
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -165,13 +142,11 @@ def create_chunks(df, chunk_size=CHUNK_SIZE):
         np.array: Array of chunks with shape (num_chunks, chunk_size, num_features)
     """
     if len(df) < chunk_size:
-        # Pad with zeros if not enough data
+        # Pad with zeros at the front if not enough data
         padding_needed = chunk_size - len(df)
-        padded_df = pd.concat([
-            df, 
-            pd.DataFrame(np.zeros((padding_needed, len(FEATURE_COLUMNS))), 
-                        columns=FEATURE_COLUMNS)
-        ])
+        padding_df = pd.DataFrame(np.zeros((padding_needed, len(FEATURE_COLUMNS))), 
+                                columns=FEATURE_COLUMNS)
+        padded_df = pd.concat([padding_df, df], ignore_index=True)
         return np.array([padded_df.values])
     
     # Create overlapping chunks
@@ -225,8 +200,8 @@ def prepare_training_data():
     print(f"  Chunk shape: {X[0].shape}")
     print(f"  Emotion distribution: {pd.Series(y).value_counts().to_dict()}")
     
-    # Hardcode the labels in a specific order
-    hardcoded_labels = ['focused', 'nervous', 'relax', 'stress', 'surprise']
+    # Use hardcoded labels from settings
+    hardcoded_labels = HARDCODED_LABELS
     
     # Encode labels with hardcoded classes
     label_encoder = LabelEncoder()
