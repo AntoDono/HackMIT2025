@@ -40,7 +40,7 @@ class SunoMusicGenerator:
         """
         url = f"{self.BASE_URL}/generate"
         payload = {
-            "prompt": prompt,
+            "topic": prompt,
             "title": title,
             "tags": tags,
             "instrumental": make_instrumental,

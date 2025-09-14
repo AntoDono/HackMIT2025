@@ -1,0 +1,21 @@
+{
+  "timestamp": "20250914_095131",
+  "total_samples": 200,
+  "columns": [
+    "attention",
+    "meditation",
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta",
+    "lowGamma",
+    "midGamma"
+  ],
+  "model_meta": {},
+  "user_info": {
+    "full_name": "victor desouza",
+    "target_emotion": "schizophrenic-episode"
+  }
+}

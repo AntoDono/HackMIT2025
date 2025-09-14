@@ -5,9 +5,9 @@ CHUNK_SIZE = 40                    # Size of each data chunk for training
 EPOCHS = 75                        # Number of training epochs
 BATCH_SIZE = 64                    # Training batch size
 VALIDATION_SPLIT = 0.2             # Fraction of data for validation
-LEARNING_RATE = 0.0015              # Learning rate for optimizer
+LEARNING_RATE = 0.001              # Learning rate for optimizer
 DROPOUT_RATE = 0.1                 # Dropout rate for regularization
-HIDDEN_UNITS = [512, 1024, 2048, 1024, 512]       # Hidden layer sizes
+HIDDEN_UNITS = [1024, 2048, 4096, 2048, 1024]       # Hidden layer sizes
 TEST_SIZE = 0.2                    # Fraction of data for testing
 RANDOM_STATE = 42                  # Random seed for reproducibility
 

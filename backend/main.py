@@ -65,6 +65,7 @@ Path("generated-music").mkdir(exist_ok=True)
 llm_client = LLMClient()
 current_emotion_analysis = "Analyzing brainwave patterns..."
 current_status = "unknown"
+song_reasoning = "No music recommendation yet"
 
 # Initialize Suno client if API key is available
 suno_client = None
@@ -302,7 +303,7 @@ def music_generation_worker():
 
 def add_row(sample_dict: Dict[str, float]) -> int:
     """Add a row to the DataFrame and return new size."""
-    global brainwave_data, current_emotion_analysis, current_status
+    global brainwave_data, current_emotion_analysis, current_status, song_reasoning
 
     # Create labeled brainwave data BEFORE emotion analysis
     labeled_sample_dict = {
@@ -336,8 +337,11 @@ def add_row(sample_dict: Dict[str, float]) -> int:
                 song_description = None
                 with music_generation_lock:
                     if not is_generating_music:
-                        song_description = llm_client.generate_song_description(predicted_emotion, brainwave_data.copy())
+                        song_data = llm_client.generate_song_description(predicted_emotion, brainwave_data.copy())
+                        song_description = song_data['song_description']
+                        song_reasoning = song_data['song_reasoning']
                         print(f"🎵 Song Description: {song_description}")
+                        print(f"💭 Song Reasoning: {song_reasoning}")
                     else:
                         print(f"⏳ Skipping song description - music generation in progress")
 
@@ -390,6 +394,7 @@ def add_row(sample_dict: Dict[str, float]) -> int:
             "labeled_data": labeled_sample_dict,  # Labeled data for frontend display
             "current_emotion_analysis": current_emotion_analysis,  # Real-time emotion analysis
             "current_status": current_status,  # Current emotional status
+            "song_reasoning": song_reasoning,  # Music recommendation reasoning
             "sample_count": new_size,
             "timestamp": time.time()
         }

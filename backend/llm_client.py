@@ -71,7 +71,7 @@ class LLMClient:
             print(f"Error calling {self.provider.title()} API: {e}")
             raise e
     
-    def generate_song_description(self, classified_emotion: str, eeg_analysis: Dict[str, Any]) -> str:
+    def generate_song_description(self, classified_emotion: str, eeg_analysis: Dict[str, Any]) -> Dict[str, str]:
         """
         Generate a therapeutic song description using LLM to bring user's emotion back to baseline.
         
@@ -80,7 +80,7 @@ class LLMClient:
             eeg_analysis: Dictionary containing EEG analysis results from eeg_stats.py
             
         Returns:
-            str: A song description suitable for Suno AI music generation to restore emotional balance
+            Dict[str, str]: Dictionary containing 'song_reasoning' and 'song_description'
         """
         try:
             # Create the prompt for the LLM
@@ -90,14 +90,17 @@ class LLMClient:
             llm_response = self.call_llm(prompt)
             
             # Parse JSON response
-            song_description = self._parse_json_response(llm_response)
+            song_data = self._parse_json_response(llm_response)
             
-            return song_description
+            return song_data
             
         except Exception as e:
             print(f"Error generating song description: {e}")
             # Fallback description
-            return "calm ambient music at 75 BPM with soft piano and strings, peaceful and relaxing atmosphere designed to restore emotional balance"
+            return {
+                'song_reasoning': "The user needs calming music to restore emotional balance and reduce stress levels.",
+                'song_description': "calm ambient music at 75 BPM with soft piano and strings, peaceful and relaxing atmosphere designed to restore emotional balance"
+            }
     
     def _build_therapeutic_prompt(self, classified_emotion: str, eeg_analysis: Dict[str, Any]) -> str:
         """Build the prompt for the LLM to generate therapeutic music descriptions."""
@@ -114,26 +117,30 @@ Your task is to analyze this emotional and neurological data and create a specif
 
 1. The current emotional state and what musical elements would counterbalance it
 2. The brainwave patterns and what they suggest about the user's mental state
-3. Therapeutic music principles for emotional regulation
-4. Specific musical parameters (BPM, instruments, genre, mood) that promote emotional balance
-5. Keep the description concise and to the point.
+3. Specific musical parameters (BPM, instruments, genre, mood) that promote emotional balance
+4. Keep the description concise and to the point.
+5. Song reasoning should be a short, concise explanation of the user's emotional state and the music's purpose and techniques to bring them back to emotional baseline.
 
 Example:
 
 ```json
 {{
+  "song_reasoning": "The user is feeling stressed and anxious. The music should be calming and soothing to help them relax and feel better.",
   "song_description": "90 BPM, soft piano, warm strings, and subtle nature sounds, bird noises, nature."
 }}
 ```
 
 
-Respond with a JSON object containing only the song_description field:
+Respond with a JSON object containing both song_reasoning and song_description fields:
 
 {{
+  "song_reasoning": "Brief explanation of why this specific music will help counteract the user's current emotional state",
   "song_description": "A detailed description of therapeutic music including genre, BPM, instruments, mood, and specific therapeutic intent"
 }}
 
-The song_description should be a single, detailed sentence suitable for Suno AI music generation that specifies the therapeutic musical elements needed to bring this user back to emotional baseline."""
+The song_description should be a single, detailed sentence suitable for Suno AI music generation that specifies the therapeutic musical elements needed to bring this user back to emotional baseline.
+DO NOT ADD ANY LYRICS OR VOCALS TO THE SONG DESCRIPTION.
+"""
         
         return prompt
     
@@ -161,8 +168,8 @@ The song_description should be a single, detailed sentence suitable for Suno AI 
             return obj
     
     
-    def _parse_json_response(self, llm_response: str) -> str:
-        """Parse JSON response from LLM and extract song_description."""
+    def _parse_json_response(self, llm_response: str) -> Dict[str, str]:
+        """Parse JSON response from LLM and extract song_reasoning and song_description."""
         try:
             # With response_format="json_object", the response should be direct JSON
             # But handle both cases: direct JSON or JSON in code blocks
@@ -176,17 +183,28 @@ The song_description should be a single, detailed sentence suitable for Suno AI 
             # Parse JSON
             parsed = json.loads(json_str)
             
-            # Extract song_description
+            # Extract both fields
+            result = {}
             if 'song_description' in parsed:
-                return parsed['song_description']
+                result['song_description'] = parsed['song_description']
             else:
-                raise ValueError("No 'song_description' field found in response")
+                result['song_description'] = "therapeutic ambient music at 75 BPM with calming instruments, designed to restore emotional balance"
+            
+            if 'song_reasoning' in parsed:
+                result['song_reasoning'] = parsed['song_reasoning']
+            else:
+                result['song_reasoning'] = "The user needs calming music to restore emotional balance and reduce stress levels."
+                
+            return result
                 
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Error parsing JSON response: {e}")
             print(f"Raw response: {llm_response}")
             # Return fallback
-            return "therapeutic ambient music at 75 BPM with calming instruments, designed to restore emotional balance"
+            return {
+                'song_reasoning': "The user needs calming music to restore emotional balance and reduce stress levels.",
+                'song_description': "therapeutic ambient music at 75 BPM with calming instruments, designed to restore emotional balance"
+            }
     
     def analyze_current_eeg_data(self, labeled_sample: Dict[str, Dict]) -> Dict[str, str]:
         """

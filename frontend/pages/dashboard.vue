@@ -103,6 +103,22 @@
         </div>
       </div>
 
+      <!-- Counteract Audio Stimuli -->
+      <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v6.114A4.369 4.369 0 005 11a4 4 0 104 4V5.114l8-1.6V9.114A4.369 4.369 0 0016 9a4 4 0 104 4V3z"/>
+          </svg>
+          Counteract Audio Stimuli
+        </h2>
+        
+        <div class="bg-white/40 rounded-lg p-4 border border-blue-100">
+          <div class="text-sm text-slate-700 leading-relaxed">
+            {{ songReasoning }}
+          </div>
+        </div>
+      </div>
+
       <!-- Wave Visualizations Full Width Row -->
       <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg p-6">
         <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center">
@@ -207,6 +223,7 @@ const connectionStatus = ref('disconnected')
 const currentEmotion = ref('')
 const currentEmotionAnalysis = ref('')
 const currentStatus = ref('unknown')
+const songReasoning = ref('No music recommendation yet')
 const sampleCount = ref(0)
 const lastUpdateTime = ref('')
 const currentBrainwaveData = ref({})
@@ -486,7 +503,8 @@ function handleSSEMessage(data) {
       currentBrainwaveData.value = data.data || {}
       currentLabeledData.value = data.labeled_data || {}
       currentEmotionAnalysis.value = data.current_emotion_analysis || ''
-      currentStatus.value = data.current_status || 'neutral'
+      currentStatus.value = data.current_status || 'unknown'
+      songReasoning.value = data.song_reasoning || 'No music recommendation yet'
       sampleCount.value = data.sample_count
       lastUpdateTime.value = new Date().toLocaleTimeString()
       
